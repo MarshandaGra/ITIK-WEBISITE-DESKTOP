@@ -21,6 +21,9 @@ return new class extends Migration
                 ->comment('Hanya diisi jika role=siswa');
             $table->string('email', 100)->nullable();
             $table->string('password', 255);
+
+            $table->timestamp('created_at')->nullable()->useCurrent();
+            $table->timestamp('updated_at')->nullable()->useCurrent()->useCurrentOnUpdate();
         });
     }
 

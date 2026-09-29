@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('table_remedial_siswa', function (Blueprint $table) {
+        Schema::create('remedial_siswa', function (Blueprint $table) {
             $table->integer('id_remedial_siswa')->autoIncrement();
             $table->string('id_kuis_remedial', 50);
             $table->integer('id_mengerjakan_asal')
@@ -56,6 +56,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('table_remedial_siswa');
+        Schema::dropIfExists('remedial_siswa');
     }
 };

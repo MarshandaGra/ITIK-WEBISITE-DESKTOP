@@ -4,62 +4,92 @@ namespace App\Http\Controllers;
 
 use App\Models\Materi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MateriController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $materi = Materi::latest()->get();
+
+        return view('materi.index', compact('materi'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return view('materi.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'judul' => 'required|string|max:150',
+            'bab' => 'nullable|string|max:50',
+            'kelas' => 'nullable|string|max:50',
+            'deskripsi' => 'nullable|string',
+            'isi_materi' => 'nullable|string|max:255',
+            'link_youtube' => 'nullable|url|max:255',
+        ]);
+
+        //Sementara
+        $validated['id_materi'] = 'M' . str_pad(
+            (Materi::count() + 1),
+            3,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        $validated['id_user'] = Auth::user()->id_user;
+
+        Materi::create($validated);
+
+        return redirect()
+            ->route('materi.index')
+            ->with('success', 'Materi berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Materi $materi)
+    public function show($id)
     {
-        //
+        $materi = Materi::findOrFail($id);
+
+        return view('materi.show', compact('materi'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Materi $materi)
+    public function edit($id)
     {
-        //
+        $materi = Materi::findOrFail($id);
+
+        return view('materi.edit', compact('materi'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Materi $materi)
+    public function update(Request $request, $id)
     {
-        //
+        $materi = Materi::findOrFail($id);
+
+        $validated = $request->validate([
+            'judul' => 'required|string|max:150',
+            'bab' => 'nullable|string|max:50',
+            'kelas' => 'nullable|string|max:50',
+            'deskripsi' => 'nullable|string',
+            'isi_materi' => 'nullable|string|max:255',
+            'link_youtube' => 'nullable|url|max:255',
+        ]);
+
+        $materi->update($validated);
+
+        return redirect()
+            ->route('materi.index')
+            ->with('success', 'Materi berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Materi $materi)
+    public function destroy($id)
     {
-        //
+        $materi = Materi::findOrFail($id);
+
+        $materi->delete();
+
+        return redirect()
+            ->route('materi.index')
+            ->with('success', 'Materi berhasil dihapus.');
     }
 }

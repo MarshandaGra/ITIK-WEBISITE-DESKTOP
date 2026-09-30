@@ -5,6 +5,18 @@
 </head>
 <body>
 
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <strong>Kuis belum dapat dipublikasikan:</strong>
+
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <h1>{{ $kuis->judul }}</h1>
 
     <p>
@@ -97,6 +109,25 @@
 
         <p>Belum ada soal.</p>
 
+    @endif
+
+    @if ($kuis->status_publikasi === 'draft' && $kuis->is_aktif)
+        @if (Auth::user()->role === 'guru')
+
+            <form
+                action="{{ route('kuis.publish', $kuis->id_kuis) }}"
+                method="POST"
+                onsubmit="return confirm('Yakin ingin mempublikasikan kuis ini?');"
+            >
+                @csrf
+                @method('PATCH')
+
+                <button type="submit" class="btn btn-success">
+                    Publikasikan Kuis
+                </button>
+            </form>
+
+        @endif
     @endif
 
 

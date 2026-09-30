@@ -26,7 +26,12 @@ class Soal extends Model
         'opsi_d',
         'opsi_e',
         'jawaban',
+        'bobot',
         'tingkat_kesulitan',
+    ];
+
+    protected $casts = [
+        'bobot' => 'decimal:2',
     ];
 
     public function kuis()

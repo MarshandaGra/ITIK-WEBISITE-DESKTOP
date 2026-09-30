@@ -95,9 +95,9 @@ Route::middleware(['auth', 'role:guru'])
 // OPERATOR
 // =====================================================
 
-Route::get('/operator/dashboard', [OperatorDashboardController::class, 'index'])
-    ->middleware(['auth', 'role:operator'])
-    ->name('operator.dashboard');
+// Route::get('/operator/dashboard', [OperatorDashboardController::class, 'index'])
+//     ->middleware(['auth', 'role:operator'])
+//     ->name('operator.dashboard');
 
 // =====================================================
 // GURU DAN OPERATOR

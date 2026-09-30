@@ -1,5 +1,21 @@
 <h1>Edit Soal</h1>
 
+@if ($errors->any())
+    <div style="color: red;">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+@if (session('error'))
+    <div style="color: red;">
+        {{ session('error') }}
+    </div>
+@endif
+
 <h2>{{ $kuis->judul }}</h2>
 
 <form
@@ -123,6 +139,27 @@
             </option>
 
         </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Bobot Nilai (%)</label>
+        <br>
+
+        <input
+            type="number"
+            name="bobot"
+            value="{{ old('bobot', $soal->bobot) }}"
+            min="0.01"
+            max="100"
+            step="0.01"
+            required
+        >
+
+        <small>
+            Total bobot semua soal dalam kuis harus tepat 100%.
+        </small>
     </div>
 
     <br>

@@ -30,14 +30,19 @@ class Materi extends Model
     }
 
     public function kuis()
-{
-    return $this->belongsToMany(
-        Kuis::class,
-        'materi_kuis',
-        'id_materi',
-        'id_kuis',
-        'id_materi',
-        'id_kuis'
-    );
-}
+    {
+        return $this->belongsToMany(
+            Kuis::class,
+            'materi_kuis',
+            'id_materi',
+            'id_kuis',
+            'id_materi',
+            'id_kuis'
+        );
+    }
+
+    public function progress()
+    {
+        return $this->hasMany(Progress::class,'id_materi','id_materi');
+    }
 }

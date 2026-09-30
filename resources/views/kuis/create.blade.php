@@ -49,27 +49,27 @@
 
             <select name="kategori" id="kategori" required>
 
-                <option value="">
+                <option value="" {{ old('kategori') ? '' : 'selected' }}>
                     -- Pilih Kategori --
                 </option>
 
-                <option value="post-test">
+                <option value="post-test" {{ old('kategori') === 'post-test' ? 'selected' : '' }}>
                     Post-test
                 </option>
 
-                <option value="pass-test">
+                <option value="pass-test" {{ old('kategori') === 'pass-test' ? 'selected' : '' }}>
                     Pass-test
                 </option>
 
-                <option value="kuis harian">
+                <option value="kuis harian" {{ old('kategori') === 'kuis harian' ? 'selected' : '' }}>
                     Kuis Harian
                 </option>
 
-                <option value="ulangan">
+                <option value="ulangan" {{ old('kategori') === 'ulangan' ? 'selected' : '' }}>
                     Ulangan
                 </option>
 
-                <option value="remedial">
+                <option value="remedial" {{ old('kategori') === 'remedial' ? 'selected' : '' }}>
                     Remedial
                 </option>
 
@@ -78,140 +78,184 @@
 
         <br>
 
-        {{-- Materi --}}
-        <div id="materi-container">
+            {{-- Materi --}}
+            <div id="materi-container">
 
-            <label>Materi</label><br>
+                <label>Materi</label><br>
 
-            <select name="materi[]" multiple>
+                <select name="materi[]" multiple>
 
-                @foreach ($materis as $materi)
+                    @foreach ($materis as $materi)
 
-                    <option value="{{ $materi->id_materi }}">
-                        {{ $materi->judul }}
-                        @if ($materi->bab)
-                            - {{ $materi->bab }}
-                        @endif
+                        <option
+                            value="{{ $materi->id_materi }}"
+                            {{ in_array($materi->id_materi, old('materi', [])) ? 'selected' : '' }}
+                        >
+                            {{ $materi->judul }}
+
+                            @if ($materi->bab)
+                                - {{ $materi->bab }}
+                            @endif
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+                <p>
+                    Tekan Ctrl + klik untuk memilih lebih dari satu materi.
+                </p>
+
+            </div>
+
+            <br>
+
+            {{-- Alokasi waktu --}}
+            <div>
+                <label>Alokasi Waktu (menit)</label><br>
+
+                <input
+                    type="number"
+                    name="alokasi_waktu"
+                    value="{{ old('alokasi_waktu') }}"
+                    min="1"
+                >
+            </div>
+
+            <br>
+
+            {{-- KKM --}}
+            <div>
+                <label>KKM</label><br>
+
+                <input
+                    type="number"
+                    name="kkm"
+                    value="{{ old('kkm') }}"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                >
+            </div>
+
+            <br>
+
+            {{-- Khusus ulangan --}}
+            <div id="waktu-container" style="display: none;">
+
+                <h3>Jadwal Ulangan</h3>
+
+                <label>Waktu Mulai</label><br>
+
+                <input
+                    type="datetime-local"
+                    name="waktu_mulai"
+                    value="{{ old('waktu_mulai') }}"
+                >
+
+                <br><br>
+
+                <label>Waktu Selesai</label><br>
+
+                <input
+                    type="datetime-local"
+                    name="waktu_selesai"
+                    value="{{ old('waktu_selesai') }}"
+                >
+
+            </div>
+
+            <br>
+
+            {{-- Khusus remedial --}}
+            <div id="field-remedial" style="display: none;">
+
+                <label>Kuis Asal</label><br>
+
+                <select name="id_kuis_asal">
+
+                    <option value="">
+                        -- Pilih Kuis Asal --
                     </option>
 
-                @endforeach
+                    @foreach($kuisAsal as $item)
 
-            </select>
+                        <option
+                            value="{{ $item->id_kuis }}"
+                            {{ old('id_kuis_asal') == $item->id_kuis ? 'selected' : '' }}
+                        >
+                            {{ $item->judul }}
+                            ({{ $item->kategori }})
+                        </option>
 
-            <p>
-                Tekan Ctrl + klik untuk memilih lebih dari satu materi.
-            </p>
+                    @endforeach
 
-        </div>
+                </select>
 
-        <br>
+            </div>
 
-        <div>
-            <label>Alokasi Waktu (menit)</label><br>
+            <br>
 
-            <input
-                type="number"
-                name="alokasi_waktu"
-                value="{{ old('alokasi_waktu') }}"
-                min="1"
-            >
-        </div>
+            <button type="submit">
+                Simpan Kuis
+            </button>
 
-        <br>
-
-        <div>
-            <label>KKM</label><br>
-
-            <input
-                type="number"
-                name="kkm"
-                value="{{ old('kkm') }}"
-                min="0"
-                max="100"
-                step="0.01"
-            >
-        </div>
-
-        <br>
-
-        {{-- Khusus ulangan --}}
-        <div id="waktu-container" style="display:none;">
-
-            <h3>Jadwal Ulangan</h3>
-
-            <label>Waktu Mulai</label><br>
-
-            <input
-                type="datetime-local"
-                name="waktu_mulai"
-                value="{{ old('waktu_mulai') }}"
-            >
-
-            <br><br>
-
-            <label>Waktu Selesai</label><br>
-
-            <input
-                type="datetime-local"
-                name="waktu_selesai"
-                value="{{ old('waktu_selesai') }}"
-            >
-
-        </div>
-
-        <br>
-
-        <button type="submit">
-            Simpan Kuis
-        </button>
-
-        <a href="{{ route('kuis.index') }}">
-            Batal
-        </a>
+            <a href="{{ route('kuis.index') }}">
+                Batal
+            </a>
 
     </form>
 
-    <script>
+<script>
 
-        const kategori = document.getElementById('kategori');
-        const materiContainer = document.getElementById('materi-container');
-        const waktuContainer = document.getElementById('waktu-container');
+    // Mengatur tampilan field form sesuai kategori kuis yang dipilih.
+    const kategori = document.getElementById('kategori');
+    const materiContainer = document.getElementById('materi-container');
+    const waktuContainer = document.getElementById('waktu-container');
+    const remedialContainer = document.getElementById('field-remedial');
 
-        function updateForm() {
+    function updateForm() {
 
-            if (kategori.value === 'ulangan') {
+        const value = kategori.value;
 
-                materiContainer.style.display = 'block';
-                waktuContainer.style.display = 'block';
+        // Default
+        materiContainer.style.display = 'none';
+        waktuContainer.style.display = 'none';
+        remedialContainer.style.display = 'none';
 
-            } else if (
-                kategori.value === 'post-test' ||
-                kategori.value === 'pass-test' ||
-                kategori.value === 'kuis harian'
-            ) {
+        // Post-test, pass-test, kuis harian
+        if (
+            value === 'post-test' ||
+            value === 'pass-test' ||
+            value === 'kuis harian'
+        ) {
 
-                materiContainer.style.display = 'block';
-                waktuContainer.style.display = 'none';
-
-            } else if (kategori.value === 'remedial') {
-
-                materiContainer.style.display = 'none';
-                waktuContainer.style.display = 'none';
-
-            } else {
-
-                materiContainer.style.display = 'none';
-                waktuContainer.style.display = 'none';
-
-            }
+            materiContainer.style.display = 'block';
 
         }
 
-        kategori.addEventListener('change', updateForm);
+        // Ulangan
+        else if (value === 'ulangan') {
 
-        updateForm();
+            materiContainer.style.display = 'block';
+            waktuContainer.style.display = 'block';
 
-    </script>
+        }
+
+        // Remedial
+        else if (value === 'remedial') {
+
+            remedialContainer.style.display = 'block';
+
+        }
+
+    }
+
+    kategori.addEventListener('change', updateForm);
+
+    updateForm();
+
+</script>
 
 </body>
 </html>

@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Kuis::class, 'id_user', 'id_user');
     }
+
+    public function progressMateri()
+    {
+        return $this->hasMany(Progress::class,'id_user','id_user');
+    }
 }

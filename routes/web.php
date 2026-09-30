@@ -12,10 +12,17 @@ use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\OperatorDashboardController;
 use Illuminate\Support\Facades\Route;
 use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
+Route::get('/profil', function () {
+    return view('guru.profil');
+})->middleware('auth')->name('profil');
 
 
 // =====================================================

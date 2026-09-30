@@ -25,7 +25,7 @@ class KuisController extends Controller
 
     public function create()
     {
-        $materis = Materi::orderBy('bab')
+        $materi = Materi::orderBy('bab')
             ->orderBy('judul')
             ->get();
 
@@ -34,7 +34,7 @@ class KuisController extends Controller
         ->orderBy('judul')
         ->get();
 
-        return view('kuis.create', compact('materis', 'kuisAsal'));
+        return view('kuis.create', compact('materi', 'kuisAsal'));
     }
 
     public function store(Request $request)
@@ -61,7 +61,7 @@ class KuisController extends Controller
             'waktu_selesai' => 'nullable|date',
 
             'materi' => 'nullable|array',
-            'materi.*' => 'exists:materis,id_materi',
+            'materi.*' => 'exists:materi,id_materi',
 
             'id_kuis_asal' => 'nullable|exists:kuis,id_kuis',
         ]);
@@ -212,7 +212,7 @@ class KuisController extends Controller
             ]);
         }
 
-        $materis = Materi::orderBy('bab')
+        $materi = Materi::orderBy('bab')
             ->orderBy('judul')
             ->get();
 
@@ -222,7 +222,7 @@ class KuisController extends Controller
 
         return view(
             'kuis.edit',
-            compact('kuis', 'materis', 'materiTerpilih')
+            compact('kuis', 'materi', 'materiTerpilih')
         );
     }
 
@@ -254,7 +254,7 @@ class KuisController extends Controller
             'waktu_mulai' => 'nullable|date',
             'waktu_selesai' => 'nullable|date',
             'materi' => 'nullable|array',
-            'materi.*' => 'exists:materis,id_materi',
+            'materi.*' => 'exists:materi,id_materi',
         ]);
 
         if ($validated['kategori'] === 'ulangan') {

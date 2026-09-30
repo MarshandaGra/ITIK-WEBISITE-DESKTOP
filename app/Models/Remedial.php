@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Remedial extends Model
 {
-    protected $table = 'remedials';
+    protected $table = 'remedial';
 
     protected $primaryKey = 'id_remedial';
 

@@ -49,27 +49,27 @@
 
             <select name="kategori" id="kategori" required>
 
-                <option value="">
+                <option value="" {{ old('kategori') ? '' : 'selected' }}>
                     -- Pilih Kategori --
                 </option>
 
-                <option value="post-test">
+                <option value="post-test" {{ old('kategori') === 'post-test' ? 'selected' : '' }}>
                     Post-test
                 </option>
 
-                <option value="pass-test">
+                <option value="pass-test" {{ old('kategori') === 'pass-test' ? 'selected' : '' }}>
                     Pass-test
                 </option>
 
-                <option value="kuis harian">
+                <option value="kuis harian" {{ old('kategori') === 'kuis harian' ? 'selected' : '' }}>
                     Kuis Harian
                 </option>
 
-                <option value="ulangan">
+                <option value="ulangan" {{ old('kategori') === 'ulangan' ? 'selected' : '' }}>
                     Ulangan
                 </option>
 
-                <option value="remedial">
+                <option value="remedial" {{ old('kategori') === 'remedial' ? 'selected' : '' }}>
                     Remedial
                 </option>
 
@@ -206,8 +206,9 @@
 
     </form>
 
-    <script>
+<script>
 
+    // Mengatur tampilan field form sesuai kategori kuis yang dipilih.
     const kategori = document.getElementById('kategori');
     const materiContainer = document.getElementById('materi-container');
     const waktuContainer = document.getElementById('waktu-container');

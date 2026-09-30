@@ -8,7 +8,10 @@ use App\Http\Controllers\SiswaKuisController;
 use App\Http\Controllers\ValidasiNilaiController;
 use App\Http\Controllers\RemedialSiswaController;
 use App\Http\Controllers\RemedialController;
+use App\Http\Controllers\ProgressController;
+use App\Http\Controllers\OperatorDashboardController;
 use Illuminate\Support\Facades\Route;
+use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::get('/', function () {
     return view('welcome');
@@ -92,10 +95,9 @@ Route::middleware(['auth', 'role:guru'])
 // OPERATOR
 // =====================================================
 
-Route::get('/operator/dashboard', function () {
-    return 'Dashboard Operator';
-})->middleware(['auth', 'role:operator']);
-
+Route::get('/operator/dashboard', [OperatorDashboardController::class, 'index'])
+    ->middleware(['auth', 'role:operator'])
+    ->name('operator.dashboard');
 
 // =====================================================
 // GURU DAN OPERATOR
@@ -123,6 +125,23 @@ Route::middleware(['auth', 'role:siswa'])
     ->prefix('siswa')
     ->name('siswa.')
     ->group(function () {
+
+        Route::get('/dashboard', function () {
+            return view('siswa.dashboard');
+        })->name('dashboard');
+
+        // -------------------------
+        // MATERI
+        // -------------------------
+
+        Route::get('/materi', [ProgressController::class, 'index'])
+            ->name('materi.index');
+
+            Route::get('/materi/{idMateri}', [ProgressController::class, 'show'])
+            ->name('materi.show');
+
+        Route::post('/materi/{idMateri}/selesai', [ProgressController::class, 'selesai'])
+            ->name('materi.selesai');
 
         // -------------------------
         // KUIS

@@ -8,6 +8,7 @@ use App\Models\Soal;
 use App\Models\Remedial;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 
 class KuisController extends Controller
@@ -39,7 +40,7 @@ class KuisController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'judul' => 'required|string|max:150',
+            'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
 
             'kategori' => [
@@ -57,7 +58,7 @@ class KuisController extends Controller
             'kkm' => 'nullable|numeric|min:0|max:100',
 
             'waktu_mulai' => 'nullable|date',
-            'waktu_selesai' => 'nullable|date|after:waktu_mulai',
+            'waktu_selesai' => 'nullable|date',
 
             'materi' => 'nullable|array',
             'materi.*' => 'exists:materis,id_materi',
@@ -95,16 +96,25 @@ class KuisController extends Controller
         */
         if ($validated['kategori'] === 'ulangan') {
 
-            if (
-                empty($validated['waktu_mulai']) ||
-                empty($validated['waktu_selesai'])
-            ) {
-                return back()
-                    ->withErrors([
-                        'waktu_mulai' =>
-                            'Kuis ulangan wajib memiliki waktu mulai dan waktu selesai.',
-                    ])
-                    ->withInput();
+            if (!$request->waktu_mulai || !$request->waktu_selesai) {
+                throw ValidationException::withMessages([
+                    'waktu_mulai' => 'Waktu mulai dan waktu selesai wajib diisi untuk ulangan.',
+                ]);
+            }
+
+            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
+
+            if ($waktuMulai->lt(now())) {
+                throw ValidationException::withMessages([
+                    'waktu_mulai' => 'Waktu mulai ulangan tidak boleh sebelum waktu sekarang.',
+                ]);
+            }
+
+            if ($waktuSelesai->lte($waktuMulai)) {
+                throw ValidationException::withMessages([
+                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
             }
 
         } else {
@@ -242,23 +252,32 @@ class KuisController extends Controller
             'alokasi_waktu' => 'nullable|integer|min:1|max:300',
             'kkm' => 'nullable|numeric|min:0|max:100',
             'waktu_mulai' => 'nullable|date',
-            'waktu_selesai' => 'nullable|date|after:waktu_mulai',
+            'waktu_selesai' => 'nullable|date',
             'materi' => 'nullable|array',
             'materi.*' => 'exists:materis,id_materi',
         ]);
 
         if ($validated['kategori'] === 'ulangan') {
 
-            if (
-                empty($validated['waktu_mulai']) ||
-                empty($validated['waktu_selesai'])
-            ) {
-                return back()
-                    ->withErrors([
-                        'waktu_mulai' =>
-                            'Kuis ulangan wajib memiliki waktu mulai dan waktu selesai.',
-                    ])
-                    ->withInput();
+            if (!$request->waktu_mulai || !$request->waktu_selesai) {
+                throw ValidationException::withMessages([
+                    'waktu_mulai' => 'Waktu mulai dan waktu selesai wajib diisi untuk ulangan.',
+                ]);
+            }
+
+            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
+
+            if ($waktuMulai->lt(now())) {
+                throw ValidationException::withMessages([
+                    'waktu_mulai' => 'Waktu mulai ulangan tidak boleh sebelum waktu sekarang.',
+                ]);
+            }
+
+            if ($waktuSelesai->lte($waktuMulai)) {
+                throw ValidationException::withMessages([
+                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
             }
 
         } else {

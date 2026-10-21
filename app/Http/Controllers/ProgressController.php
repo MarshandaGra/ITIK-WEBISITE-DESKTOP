@@ -45,9 +45,12 @@ class ProgressController extends Controller
             ]
         );
 
+        $pdfUrl = $materi->pdfUrl();
+
         return view('siswa.materi.show', compact(
             'materi',
-            'progress'
+            'progress',
+            'pdfUrl'
         ));
     }
 

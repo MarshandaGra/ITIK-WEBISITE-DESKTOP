@@ -24,10 +24,10 @@ class DatabaseSeeder extends Seeder
             ['id_user' => 'U001'],
             [
                 'nomor_induk' => '198001',
-                'nama_lengkap' => 'Guru Demo',
+                'nama_lengkap' => 'Budi Guru',
                 'role' => 'guru',
                 'kelas' => null,
-                'email' => 'guru@example.com',
+                'email' => 'budi@guru.sch.id',
                 'password' => 'password123',
             ]
         );
@@ -35,11 +35,11 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['id_user' => 'U002'],
             [
-                'nomor_induk' => '25001',
-                'nama_lengkap' => 'Siswa Demo',
+                'nomor_induk' => '202401',
+                'nama_lengkap' => 'Siti Siswa',
                 'role' => 'siswa',
                 'kelas' => 'X',
-                'email' => 'siswa@example.com',
+                'email' => 'siti@siswa.sch.id',
                 'password' => 'password123',
             ]
         );
@@ -47,12 +47,12 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['id_user' => 'U003'],
             [
-                'nomor_induk' => 'OP001',
-                'nama_lengkap' => 'Operator Demo',
+                'nomor_induk' => '199001',
+                'nama_lengkap' => 'Andi Operator',
                 'role' => 'operator',
                 'kelas' => null,
-                'email' => 'operator@example.com',
-                'password' => 'password123',
+                'email' => 'andi@sekolah.sch.id',
+                'password' => '123456',
             ]
         );
 

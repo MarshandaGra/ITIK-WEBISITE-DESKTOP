@@ -549,6 +549,7 @@
             <form
                 action="{{ route('materi.store') }}"
                 method="POST"
+                enctype="multipart/form-data"
             >
 
                 @csrf
@@ -628,24 +629,24 @@
                 </div>
 
 
-                <!-- ISI MATERI -->
+                <!-- FILE PDF -->
 
                 <div class="form-group">
 
                     <label>
-                        Isi Materi / Path PDF
+                        File PDF Materi
                     </label>
 
                     <input
-                        type="text"
-                        name="isi_materi"
+                        type="file"
+                        name="file_pdf"
                         class="form-control"
-                        value="{{ old('isi_materi') }}"
-                        placeholder="Masukkan path PDF materi"
+                        accept=".pdf,application/pdf"
                     >
 
                     <div class="form-hint">
-                        Masukkan path file PDF materi jika tersedia.
+                        Unggah file PDF materi (maksimal 10 MB).
+                        Siswa dapat langsung membaca PDF di halaman materi.
                     </div>
 
                 </div>

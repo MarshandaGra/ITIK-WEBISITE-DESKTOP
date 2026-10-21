@@ -559,7 +559,7 @@
                 </div>
 
 
-                @if($materi->isi_materi)
+                @if($pdfUrl)
 
                     <div class="document-box">
 
@@ -584,11 +584,50 @@
                         </div>
 
 
-                        <a href="{{ asset('storage/' . $materi->isi_materi) }}"
+                        <a href="{{ $pdfUrl }}"
                            target="_blank"
                            class="open-document">
                             Buka PDF ↗
                         </a>
+
+                    </div>
+
+
+                    <iframe
+                        src="{{ $pdfUrl }}#toolbar=1"
+                        style="
+                            width: 100%;
+                            height: 70vh;
+                            min-height: 500px;
+                            margin-top: 20px;
+                            border: 1px solid #dedaf5;
+                            border-radius: 12px;
+                        "
+                    ></iframe>
+
+                @elseif($materi->isi_materi)
+
+                    <div class="document-box">
+
+                        <div class="document-left">
+
+                            <div class="document-icon">
+                                📄
+                            </div>
+
+                            <div class="document-text">
+
+                                <strong>
+                                    {{ basename($materi->isi_materi) }}
+                                </strong>
+
+                                <span>
+                                    File tidak ditemukan di server.
+                                </span>
+
+                            </div>
+
+                        </div>
 
                     </div>
 

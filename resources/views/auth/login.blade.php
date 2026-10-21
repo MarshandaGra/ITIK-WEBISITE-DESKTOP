@@ -326,6 +326,65 @@
         }
 
         /* =========================
+           AKUN DEMO
+        ========================= */
+
+        .demo-box {
+            margin-top: 22px;
+            padding: 16px 18px;
+
+            border: 1px dashed #cfc9ee;
+            border-radius: 13px;
+
+            background: #f7f6fe;
+
+            font-size: 13px;
+        }
+
+        .demo-title {
+            font-weight: bold;
+            color: #393653;
+
+            margin-bottom: 10px;
+        }
+
+        .demo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+
+            padding: 7px 0;
+
+            border-top: 1px solid #eceaf7;
+        }
+
+        .demo-row:first-of-type {
+            border-top: none;
+        }
+
+        .demo-role {
+            font-weight: bold;
+            color: #6553e8;
+        }
+
+        .demo-email {
+            color: #55516e;
+        }
+
+        .demo-pass {
+            font-family: Consolas, monospace;
+            font-size: 12px;
+
+            background: #eceaf9;
+            color: #4a3f9e;
+
+            padding: 1px 7px;
+            border-radius: 6px;
+        }
+
+        /* =========================
            FOOTER
         ========================= */
 
@@ -564,6 +623,35 @@
                 </button>
 
             </form>
+
+
+            <!-- AKUN DEMO -->
+
+            <div class="demo-box">
+
+                <div class="demo-title">
+                    ℹ️ Akun Demo
+                </div>
+
+                <div class="demo-row">
+                    <span class="demo-role">Guru</span>
+                    <span class="demo-email">budi@guru.sch.id</span>
+                    <span class="demo-pass">password123</span>
+                </div>
+
+                <div class="demo-row">
+                    <span class="demo-role">Siswa</span>
+                    <span class="demo-email">siti@siswa.sch.id</span>
+                    <span class="demo-pass">password123</span>
+                </div>
+
+                <div class="demo-row">
+                    <span class="demo-role">Operator</span>
+                    <span class="demo-email">andi@sekolah.sch.id</span>
+                    <span class="demo-pass">123456</span>
+                </div>
+
+            </div>
 
 
             <div class="login-footer">

@@ -51,12 +51,25 @@
 
 <h3>Isi Materi</h3>
 
-@if($materi->isi_materi)
+@if($pdfUrl)
+    <iframe
+        src="{{ $pdfUrl }}#toolbar=1"
+        style="
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        "
+    ></iframe>
+
     <p>
-        <a href="{{ asset($materi->isi_materi) }}" target="_blank">
-            Buka / Lihat File Materi
+        <a href="{{ $pdfUrl }}" target="_blank">
+            Buka PDF di tab baru ↗
         </a>
     </p>
+@elseif($materi->isi_materi)
+    <p>{{ $materi->isi_materi }}</p>
 @else
     <p>File materi belum tersedia.</p>
 @endif

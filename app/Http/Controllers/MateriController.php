@@ -33,13 +33,15 @@ class MateriController extends Controller
             'bab' => 'nullable|string|max:50',
             'kelas' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',
-            'isi_materi' => 'nullable|string|max:255',
+            'file_pdf' => 'nullable|file|mimes:pdf|max:10240',
             'link_youtube' => 'nullable|url|max:255',
         ], [
             'judul.required' => 'Judul materi wajib diisi.',
             'judul.max' => 'Judul materi maksimal 150 karakter.',
             'judul.unique' => 'Judul materi sudah digunakan.',
             'link_youtube.url' => 'Link YouTube harus berupa URL yang valid.',
+            'file_pdf.mimes' => 'File materi harus berformat PDF.',
+            'file_pdf.max' => 'Ukuran file PDF maksimal 10 MB.',
         ]);
 
         // Sementara
@@ -52,6 +54,12 @@ class MateriController extends Controller
 
         $validated['id_user'] = Auth::user()->id_user;
 
+        if ($request->hasFile('file_pdf')) {
+            $validated['isi_materi'] = $request->file('file_pdf')->store('materi', 'public');
+        }
+
+        unset($validated['file_pdf']);
+
         Materi::create($validated);
 
         return redirect()
@@ -63,7 +71,9 @@ class MateriController extends Controller
     {
         $materi = Materi::findOrFail($id);
 
-        return view('materi.show', compact('materi'));
+        $pdfUrl = $materi->pdfUrl();
+
+        return view('materi.show', compact('materi', 'pdfUrl'));
     }
 
     public function edit($id)
@@ -88,7 +98,7 @@ class MateriController extends Controller
             'bab' => 'nullable|string|max:50',
             'kelas' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',
-            'isi_materi' => 'nullable|string|max:255',
+            'file_pdf' => 'nullable|file|mimes:pdf|max:10240',
             'link_youtube' => 'nullable|url|max:255',
         ], [
             'judul.unique' => 'Judul materi sudah digunakan.',
@@ -104,6 +114,10 @@ class MateriController extends Controller
     public function destroy($id)
     {
         $materi = Materi::findOrFail($id);
+
+        if ($materi->isi_materi && Storage::disk('public')->exists($materi->isi_materi)) {
+            Storage::disk('public')->delete($materi->isi_materi);
+        }
 
         $materi->delete();
 

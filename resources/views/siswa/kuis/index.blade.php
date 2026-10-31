@@ -987,7 +987,7 @@
 
                 {{-- Bagian Kuis Umum / Ulangan jika ada --}}
                 @php
-                    $kuisTanpaBab = $kuis->filter(fn ($k) => $k->materi->isEmpty() || $k->kategori === 'ulangan');
+                    $kuisTanpaBab = $kuis->filter(fn ($k) => $k->materi->isEmpty() || strtolower(trim($k->kategori)) === 'ulangan');
                 @endphp
 
                 @if ($kuisTanpaBab->isNotEmpty())
@@ -1195,6 +1195,11 @@
                                         </p>
                                     @endif
 
+                                    @php
+                                        $katBabItem = strtolower(trim($item->kategori ?? ''));
+                                        $bisaBabUlang = in_array($katBabItem, ['kuis harian', 'pre-test', 'pass-test']);
+                                    @endphp
+
                                     @if ($terkunci)
 
                                         <button class="btn disabled" disabled>🔒 Kuis Terkunci</button>
@@ -1202,11 +1207,20 @@
                                             ℹ️ {{ $alasanKunci }}
                                         </div>
 
-                                    @elseif (in_array(strtolower(trim($item->kategori)), ['kuis harian', 'pre-test', 'pass-test']) && $sudahPernah && !$lulus)
+                                    @elseif ($bisaBabUlang && $sudahPernah && !$lulus)
 
                                         <form action="{{ route('siswa.kuis.mulai', $item->id_kuis) }}" method="GET">
                                             <button type="submit" class="btn btn-ulang">↻ Kerjakan Ulang</button>
                                         </form>
+
+                                    @elseif ($katBabItem === 'ulangan' && $sudahPernah && !$lulus)
+
+                                        <div style="font-size: 13px; color: #d93636; margin-bottom: 8px; font-weight: bold;">
+                                            ⚠️ Nilai di bawah KKM
+                                        </div>
+                                        <a href="{{ route('siswa.remedial.index') }}" class="btn" style="background: #e67e22; text-align: center; display: block;">
+                                            Cek Tugas Remedial
+                                        </a>
 
                                     @else
 

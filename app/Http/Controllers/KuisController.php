@@ -75,7 +75,7 @@ class KuisController extends Controller
             ->get();
 
         $kuisAsal = Kuis::where('is_aktif', true)
-        ->where('kategori', '!=', 'remedial')
+        ->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan'])
         ->orderBy('judul')
         ->get();
 

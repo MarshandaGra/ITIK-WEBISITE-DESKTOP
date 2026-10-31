@@ -18,8 +18,8 @@ class RemedialController extends Controller
     public function index()
     {
         $remedials = Remedial::with([
-            'kuisRemedial',
-            'kuisAsal',
+            'kuisRemedial.soal',
+            'kuisAsal.mapel',
         ])
             ->whereHas('kuisAsal', function ($q) {
                 $q->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan']);

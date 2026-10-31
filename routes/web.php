@@ -107,6 +107,9 @@ Route::middleware(['auth', 'role:guru'])
         Route::patch('/nilai/{mengerjakan}/validasi', [ValidasiNilaiController::class, 'validasi'])
             ->name('nilai.validasi');
 
+        Route::post('/nilai/{mengerjakan}/remedial', [ValidasiNilaiController::class, 'tugaskanRemedial'])
+            ->name('nilai.remedial');
+
 
         // -------------------------
         // REMEDIAL

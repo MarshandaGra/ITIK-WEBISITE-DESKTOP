@@ -303,7 +303,7 @@
         <div class="menu-title">Menu Utama</div>
 
         <nav class="menu">
-            <a href="{{ route('guru.dashboard') }}">▦ &nbsp; Dashboard</a>
+            <a href="{{ route('dashboard') }}">▦ &nbsp; Dashboard</a>
             <a href="{{ url('/guru/materi') }}">▣ &nbsp; Materi</a>
             <a href="{{ route('kuis.index') }}">☑ &nbsp; Kuis &amp; Soal</a>
             <a href="{{ route('guru.nilai.index') }}">◉ &nbsp; Validasi Nilai</a>

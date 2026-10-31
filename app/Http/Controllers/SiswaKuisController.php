@@ -663,23 +663,116 @@ class SiswaKuisController extends Controller
     }
 
     /*
-     * Daftar Seluruh Hasil Nilai Siswa
+     * Daftar Seluruh Hasil Nilai Siswa (Berhirarki: Mapel -> Bab Materi -> Detail Kuis)
      */
-    public function daftarNilai()
+    public function daftarNilai(Request $request)
     {
         $user = Auth::user();
 
         // Tutup sesi kedaluwarsa supaya nilai langsung muncul.
         $this->submission->selesaikanMilikSiswa($user->id_user);
 
-        $hasil = Mengerjakan::with('kuis')
+        $idMapel = $request->query('mapel');
+        $idMateri = $request->query('materi');
+
+        $mapelAktif = Mapel::where('is_aktif', 1)
+            ->withCount(['kuis' => function ($q) {
+                $q->where('status_publikasi', 'terbit')
+                  ->where('is_aktif', true);
+            }])
+            ->orderBy('nama_mapel')
+            ->get();
+
+        $mapelTerpilih = null;
+        $daftarMateri = collect();
+        $materiTerpilih = null;
+        $ringkasanBab = [];
+
+        // Semua riwayat nilai final milik siswa ini
+        $semuaHasil = Mengerjakan::with(['kuis.mapel', 'kuis.materi'])
             ->where('id_user', $user->id_user)
             ->where('status_pengerjaan', 'final')
             ->orderByDesc('tanggal')
             ->orderByDesc('percobaan_ke')
             ->get();
 
-        return view('siswa.nilai.index', compact('hasil'));
+        if ($idMapel) {
+            $mapelTerpilih = Mapel::where('id_mapel', $idMapel)->first();
+
+            $daftarMateri = Materi::where('id_mapel', $idMapel)
+                ->orderBy('bab')
+                ->orderBy('judul')
+                ->with(['kuis' => function ($q) {
+                    $q->where('status_publikasi', 'terbit')
+                      ->where('is_aktif', true);
+                }])
+                ->get();
+
+            // Hitung statistik per bab untuk siswa ini
+            foreach ($daftarMateri as $mat) {
+                $kuisIds = $mat->kuis->pluck('id_kuis')->toArray();
+                $hasilBab = $semuaHasil->whereIn('id_kuis', $kuisIds);
+
+                $nilaiTertinggi = $hasilBab->isNotEmpty() ? $hasilBab->max('nilai') : null;
+                $rataRata = $hasilBab->isNotEmpty() ? $hasilBab->avg('nilai') : null;
+                $totalKuisSelesai = $hasilBab->pluck('id_kuis')->unique()->count();
+                $totalKuisTersedia = $mat->kuis->count();
+
+                $ringkasanBab[$mat->id_materi] = [
+                    'total_kuis' => $totalKuisTersedia,
+                    'kuis_selesai' => $totalKuisSelesai,
+                    'nilai_tertinggi' => $nilaiTertinggi,
+                    'rata_rata' => $rataRata,
+                    'total_attempts' => $hasilBab->count(),
+                ];
+            }
+
+            if ($idMateri) {
+                $materiTerpilih = $daftarMateri->firstWhere('id_materi', $idMateri);
+            }
+        }
+
+        // Filter hasil sesuai mapel dan bab terpilih
+        $hasilQuery = Mengerjakan::with(['kuis.mapel', 'kuis.materi'])
+            ->where('id_user', $user->id_user)
+            ->where('status_pengerjaan', 'final');
+
+        if ($idMapel) {
+            $hasilQuery->whereHas('kuis', function ($q) use ($idMapel) {
+                $q->where('id_mapel', $idMapel);
+            });
+        }
+
+        if ($idMateri) {
+            $hasilQuery->whereHas('kuis.materi', function ($q) use ($idMateri) {
+                $q->where('materi.id_materi', $idMateri);
+            });
+        }
+
+        $hasil = $hasilQuery->orderByDesc('tanggal')
+            ->orderByDesc('percobaan_ke')
+            ->get();
+
+        // Kuis umum / ulangan untuk mapel terpilih (di level 2)
+        $hasilUlanganUmum = collect();
+        if ($mapelTerpilih && !$materiTerpilih) {
+            $hasilUlanganUmum = $semuaHasil->filter(function ($item) use ($idMapel) {
+                return $item->kuis &&
+                    $item->kuis->id_mapel === $idMapel &&
+                    (strtolower(trim($item->kuis->kategori ?? '')) === 'ulangan' || $item->kuis->materi->isEmpty());
+            });
+        }
+
+        return view('siswa.nilai.index', compact(
+            'mapelAktif',
+            'mapelTerpilih',
+            'daftarMateri',
+            'materiTerpilih',
+            'ringkasanBab',
+            'hasil',
+            'hasilUlanganUmum',
+            'semuaHasil'
+        ));
     }
 }
 

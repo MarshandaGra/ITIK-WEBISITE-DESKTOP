@@ -38,17 +38,37 @@ class KuisController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $idMapel = $request->query('mapel');
+
+        $mapelAktif = Mapel::where('is_aktif', 1)
+            ->withCount(['kuis' => function ($q) {
+                $q->where('is_aktif', true);
+            }])
+            ->orderBy('nama_mapel')
+            ->get();
+
+        $mapelTerpilih = null;
+        $daftarMateri = collect();
+        if ($idMapel) {
+            $mapelTerpilih = Mapel::where('id_mapel', $idMapel)->first();
+            $daftarMateri = Materi::where('id_mapel', $idMapel)
+                ->orderBy('bab')
+                ->orderBy('judul')
+                ->get();
+        }
+
         $kuis = Kuis::where('is_aktif', true)
-            ->with('pembuat')
+            ->when($idMapel, fn ($q) => $q->where('id_mapel', $idMapel))
+            ->with(['pembuat', 'mapel', 'soal', 'materi'])
             ->latest('created_at')
             ->get();
 
-        return view('kuis.index', compact('kuis'));
+        return view('kuis.index', compact('kuis', 'mapelAktif', 'mapelTerpilih', 'daftarMateri'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $materi = Materi::orderBy('bab')
             ->orderBy('judul')
@@ -60,10 +80,11 @@ class KuisController extends Controller
         ->get();
 
         $mapel = $this->pilihanMapel();
+        $mapelTerpilih = $request->query('mapel');
 
         $tahunAjaran = TahunAjaran::aktif();
 
-        return view('kuis.create', compact('materi', 'kuisAsal', 'mapel', 'tahunAjaran'));
+        return view('kuis.create', compact('materi', 'kuisAsal', 'mapel', 'tahunAjaran', 'mapelTerpilih'));
     }
 
     public function store(Request $request)
@@ -130,7 +151,7 @@ class KuisController extends Controller
         $idKuisAsal = $validated['id_kuis_asal'] ?? null;
 
         /*
-        * Validasi khusus kategori ulangan.
+        * Validasi khusus kategori ulangan & jadwal otomatis.
         */
         if ($validated['kategori'] === 'ulangan') {
 
@@ -155,12 +176,24 @@ class KuisController extends Controller
                 ]);
             }
 
-        } else {
+            $validated['waktu_mulai'] = $request->waktu_mulai;
+            $validated['waktu_selesai'] = $request->waktu_selesai;
 
-            /*
-            * Selain ulangan tidak menggunakan
-            * jendela waktu khusus.
-            */
+        } elseif (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+
+            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
+
+            if ($waktuSelesai->lte($waktuMulai)) {
+                throw ValidationException::withMessages([
+                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
+            }
+
+            $validated['waktu_mulai'] = $request->waktu_mulai;
+            $validated['waktu_selesai'] = $request->waktu_selesai;
+
+        } else {
             $validated['waktu_mulai'] = null;
             $validated['waktu_selesai'] = null;
         }
@@ -214,7 +247,7 @@ class KuisController extends Controller
         }
 
         return redirect()
-            ->route('kuis.index')
+            ->route('kuis.index', ['mapel' => $kuis->id_mapel])
             ->with('success', 'Kuis berhasil dibuat sebagai draft.');
     }
 
@@ -238,9 +271,11 @@ class KuisController extends Controller
          * sembarangan.
          */
         if ($kuis->status_publikasi === 'terbit') {
-            return back()->withErrors([
-                'kuis' => 'Kuis yang sudah terbit tidak dapat diedit.',
-            ]);
+            return back()
+                ->withErrors([
+                    'kuis' => 'Kuis yang sudah terbit tidak dapat diedit. Ubah ke status draft terlebih dahulu.',
+                ])
+                ->with('error', 'Kuis yang sudah terbit tidak dapat diedit. Ubah ke status draft terlebih dahulu.');
         }
 
         $materi = Materi::orderBy('bab')
@@ -264,9 +299,11 @@ class KuisController extends Controller
         $kuis = Kuis::findOrFail($id);
 
         if ($kuis->status_publikasi === 'terbit') {
-            return back()->withErrors([
-                'kuis' => 'Kuis yang sudah terbit tidak dapat diedit.',
-            ]);
+            return back()
+                ->withErrors([
+                    'kuis' => 'Kuis yang sudah terbit tidak dapat diedit. Ubah ke status draft terlebih dahulu.',
+                ])
+                ->with('error', 'Kuis yang sudah terbit tidak dapat diedit. Ubah ke status draft terlebih dahulu.');
         }
 
         $validated = $request->validate([
@@ -310,6 +347,23 @@ class KuisController extends Controller
                 ]);
             }
 
+            $validated['waktu_mulai'] = $request->waktu_mulai;
+            $validated['waktu_selesai'] = $request->waktu_selesai;
+
+        } elseif (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+
+            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
+
+            if ($waktuSelesai->lte($waktuMulai)) {
+                throw ValidationException::withMessages([
+                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
+            }
+
+            $validated['waktu_mulai'] = $request->waktu_mulai;
+            $validated['waktu_selesai'] = $request->waktu_selesai;
+
         } else {
             $validated['waktu_mulai'] = null;
             $validated['waktu_selesai'] = null;
@@ -324,13 +378,14 @@ class KuisController extends Controller
         }
 
         return redirect()
-            ->route('kuis.index')
+            ->route('kuis.index', ['mapel' => $kuis->id_mapel])
             ->with('success', 'Kuis berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
         $kuis = Kuis::findOrFail($id);
+        $idMapel = $kuis->id_mapel;
 
         /*
          * Soft delete / arsip.
@@ -342,7 +397,7 @@ class KuisController extends Controller
         ]);
 
         return redirect()
-            ->route('kuis.index')
+            ->route('kuis.index', ['mapel' => $idMapel])
             ->with('success', 'Kuis berhasil diarsipkan.');
     }
 
@@ -497,8 +552,13 @@ class KuisController extends Controller
         }
 
         /*
-        * 7. Total bobot harus tepat 100
+        * 7. Total bobot harus tepat 100 (diseimbangkan otomatis jika perlu)
         */
+        if ($kuis->soal()->count() > 0) {
+            $this->seimbangkanBobot($kuis);
+            $totalBobot = (float) $kuis->soal()->sum('bobot');
+        }
+
         if ($kuis->soal->count() > 0 && round($totalBobot, 2) != 100) {
 
             $errors[] =
@@ -532,5 +592,47 @@ class KuisController extends Controller
                 'success',
                 'Kuis berhasil divalidasi dan dipublikasikan.'
             );
+    }
+
+    public function unpublish($id)
+    {
+        $kuis = Kuis::findOrFail($id);
+
+        if ($kuis->status_publikasi !== 'terbit') {
+            return back()->withErrors([
+                'kuis' => 'Kuis belum diterbitkan.',
+            ]);
+        }
+
+        $kuis->update([
+            'status_publikasi' => 'draft',
+            'id_publisher' => null,
+        ]);
+
+        return redirect()
+            ->route('kuis.show', $kuis->id_kuis)
+            ->with('success', 'Kuis berhasil ditarik kembali menjadi draft.');
+    }
+
+    private function seimbangkanBobot(Kuis $kuis): void
+    {
+        $soalList = $kuis->soal()->orderBy('id_soal')->get();
+        $total = $soalList->count();
+
+        if ($total === 0) {
+            return;
+        }
+
+        $bobotPerSoal = round(100 / $total, 2);
+        $totalTerhitung = $bobotPerSoal * $total;
+        $selisih = round(100 - $totalTerhitung, 2);
+
+        foreach ($soalList as $index => $item) {
+            $bobotIni = $bobotPerSoal;
+            if ($index === $total - 1 && $selisih != 0) {
+                $bobotIni = round($bobotIni + $selisih, 2);
+            }
+            $item->update(['bobot' => $bobotIni]);
+        }
     }
 }

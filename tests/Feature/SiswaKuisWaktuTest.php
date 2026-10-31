@@ -350,8 +350,8 @@ class SiswaKuisWaktuTest extends TestCase
         $mengerjakan = Mengerjakan::where('id_kuis', 'K001')->where('id_user', 'U002')->first();
         $this->assertSame(100.0, (float) $mengerjakan->nilai);
 
-        // Draft harus terhapus
-        $this->assertDatabaseCount('draft_jawaban', 0);
+        // Draft tetap tersimpan untuk evaluasi benar/salah oleh siswa & guru
+        $this->assertDatabaseCount('draft_jawaban', 1);
     }
 
     /**

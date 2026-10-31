@@ -675,18 +675,28 @@
 
             <div class="header-actions">
 
-                <a
-                    href="{{ route('kuis.edit', $kuis->id_kuis) }}"
-                    class="btn btn-secondary"
-                >
-                    ✎ Edit
-                </a>
+                @if ($kuis->status_publikasi === 'terbit')
+                    <a
+                        href="{{ route('kuis.edit', $kuis->id_kuis) }}"
+                        class="btn btn-secondary"
+                        onclick="alert('Kuis tersebut tidak dapat diedit karena berstatus terbit. Ubah ke status draft terlebih dahulu.'); return false;"
+                    >
+                        ✎ Edit
+                    </a>
+                @else
+                    <a
+                        href="{{ route('kuis.edit', $kuis->id_kuis) }}"
+                        class="btn btn-secondary"
+                    >
+                        ✎ Edit
+                    </a>
+                @endif
 
                 <a
-                    href="{{ route('kuis.index') }}"
+                    href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}"
                     class="btn btn-secondary"
                 >
-                    ← Kembali
+                    ← Kembali ke Kuis
                 </a>
 
             </div>
@@ -720,6 +730,26 @@
                 </div>
 
 
+                <!-- MATA PELAJARAN -->
+
+                <div class="info-item">
+
+                    <div class="info-label">
+                        Mata Pelajaran
+                    </div>
+
+                    <div class="info-value">
+
+                        <strong>
+                            {{ $kuis->mapel?->nama_mapel ?? '-' }}
+                        </strong>
+                        <small style="color: #777394;">({{ $kuis->id_mapel }})</small>
+
+                    </div>
+
+                </div>
+
+
                 <!-- KATEGORI -->
 
                 <div class="info-item">
@@ -730,6 +760,23 @@
 
                     <div class="info-value">
                         {{ $kuis->kategori }}
+                    </div>
+
+                </div>
+
+
+                <!-- TINGKAT KESULITAN -->
+
+                <div class="info-item">
+
+                    <div class="info-label">
+                        Tingkat Kesulitan
+                    </div>
+
+                    <div class="info-value">
+                        <span class="status status-{{ $kuis->tingkat_kesulitan ?? 'mudah' }}">
+                            {{ ucfirst($kuis->tingkat_kesulitan ?? 'mudah') }}
+                        </span>
                     </div>
 
                 </div>
@@ -813,9 +860,9 @@
                 </div>
 
 
-                <!-- JADWAL ULANGAN -->
+                <!-- JADWAL (untuk semua kategori yang memiliki waktu mulai/selesai) -->
 
-                @if ($kuis->kategori === 'ulangan')
+                @if ($kuis->waktu_mulai || $kuis->waktu_selesai)
 
                     <div class="info-item">
 
@@ -824,9 +871,7 @@
                         </div>
 
                         <div class="info-value">
-
                             {{ $kuis->waktu_mulai?->format('d-m-Y H:i') ?? '-' }}
-
                         </div>
 
                     </div>
@@ -839,9 +884,34 @@
                         </div>
 
                         <div class="info-value">
-
                             {{ $kuis->waktu_selesai?->format('d-m-Y H:i') ?? '-' }}
+                        </div>
 
+                    </div>
+
+                @elseif ($kuis->kategori === 'ulangan')
+
+                    <div class="info-item">
+
+                        <div class="info-label">
+                            Waktu Mulai
+                        </div>
+
+                        <div class="info-value">
+                            {{ $kuis->waktu_mulai?->format('d-m-Y H:i') ?? '-' }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-item">
+
+                        <div class="info-label">
+                            Waktu Selesai
+                        </div>
+
+                        <div class="info-value">
+                            {{ $kuis->waktu_selesai?->format('d-m-Y H:i') ?? '-' }}
                         </div>
 
                     </div>
@@ -887,6 +957,49 @@
                                 class="btn btn-success"
                             >
                                 ✓ Publikasikan Kuis
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                @endif
+
+            @elseif ($kuis->status_publikasi === 'terbit' && $kuis->is_aktif)
+
+                @if (Auth::user()->role === 'guru')
+
+                    <div class="publish-box" style="background:#fff8e8; border:1.5px solid #fde8a0;">
+
+                        <div>
+
+                            <strong style="color:#b97000;">
+                                🟢 Kuis sedang aktif / terbit
+                            </strong>
+
+                            <p style="color:#888; margin-top:5px;">
+                                Kuis ini dapat dikerjakan oleh siswa. Klik "Tarik Terbit" jika ingin menghentikan sementara.
+                            </p>
+
+                        </div>
+
+
+                        <form
+                            action="{{ route('kuis.unpublish', $kuis->id_kuis) }}"
+                            method="POST"
+                            onsubmit="return confirm('Yakin ingin menarik kuis ini kembali ke draft? Siswa tidak akan bisa mengerjakan kuis ini.');"
+                        >
+
+                            @csrf
+
+                            @method('PATCH')
+
+                            <button
+                                type="submit"
+                                class="btn"
+                                style="background:#d64545; color:white;"
+                            >
+                                ✕ Tarik / Batalkan Terbit
                             </button>
 
                         </form>

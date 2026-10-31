@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DraftJawaban;
 use App\Models\Mengerjakan;
 use App\Models\Remedial;
 use App\Models\RemedialSiswa;
+use App\Models\Soal;
 use Illuminate\Support\Facades\Auth;
 
 class ValidasiNilaiController extends Controller
@@ -53,11 +55,32 @@ class ValidasiNilaiController extends Controller
                 ->first();
         }
 
+        $soal = $mengerjakan->kuis->soal()->orderBy('id_soal')->get();
+        $draftJawaban = DraftJawaban::where('id_kuis', $mengerjakan->id_kuis)
+            ->where('id_user', $mengerjakan->id_user)
+            ->get()
+            ->keyBy('id_soal');
+
+        $totalBenar = 0;
+        $totalSalah = 0;
+        foreach ($soal as $s) {
+            $jw = $draftJawaban->get($s->id_soal)?->jawaban_dipilih;
+            if ($jw && $s->jawaban && strtoupper($jw) === strtoupper($s->jawaban)) {
+                $totalBenar++;
+            } else {
+                $totalSalah++;
+            }
+        }
+
         return view(
             'guru.nilai.show',
             compact(
                 'mengerjakan',
-                'remedial'
+                'remedial',
+                'soal',
+                'draftJawaban',
+                'totalBenar',
+                'totalSalah'
             )
         );
     }

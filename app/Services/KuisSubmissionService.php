@@ -26,7 +26,7 @@ class KuisSubmissionService
         $kuis = $sesi->kuis;
         $batas = $sesi->waktu_mulai->copy()->addMinutes($kuis->alokasi_waktu);
 
-        if ($kuis->kategori === 'ulangan' && $kuis->waktu_selesai && $kuis->waktu_selesai->lt($batas)) {
+        if ($kuis->waktu_selesai && $kuis->waktu_selesai->lt($batas)) {
             $batas = $kuis->waktu_selesai->copy();
         }
 
@@ -84,8 +84,6 @@ class KuisSubmissionService
 
             if ($sudahAda) {
                 $sesi->update(['waktu_selesai' => $waktuSelesai]);
-                DraftJawaban::where('id_kuis', $sesi->id_kuis)
-                    ->where('id_user', $sesi->id_user)->delete();
 
                 return $sudahAda;
             }
@@ -112,8 +110,8 @@ class KuisSubmissionService
                 'tanggal' => $waktuSelesai->toDateString(),
                 'percobaan_ke' => $sesi->percobaan_ke,
                 'status_pengerjaan' => 'final',
-                'status_validasi' => 'belum divalidasi',
-                'id_validator' => null,
+                'status_validasi' => 'sudah divalidasi',
+                'id_validator' => $kuis->id_user ?? null,
             ]);
 
             if ($kuis->kategori === 'remedial') {
@@ -124,8 +122,9 @@ class KuisSubmissionService
             }
 
             $sesi->update(['waktu_selesai' => $waktuSelesai]);
-            DraftJawaban::where('id_kuis', $sesi->id_kuis)
-                ->where('id_user', $sesi->id_user)->delete();
+            // Catatan: DraftJawaban tidak dihapus di sini agar siswa dan guru dapat melihat
+            // evaluasi butir soal yang benar dan salah setelah kuis dikumpulkan.
+            // Draft akan di-reset saat siswa memulai sesi percobaan baru.
 
             return $hasil;
         });

@@ -306,6 +306,98 @@
             transition: .2s;
         }
 
+        /* EVALUASI SOAL GURU */
+        .eval-stats-guru {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .eval-stat-guru-box {
+            flex: 1;
+            min-width: 140px;
+            background: #fbfbfe;
+            border: 1px solid #eeeef6;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .eval-stat-guru-num {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .eval-stat-guru-label {
+            font-size: 13px;
+            color: #777394;
+            margin-top: 4px;
+        }
+
+        .soal-guru-item {
+            background: #fafafc;
+            border: 1px solid #eeeef6;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .soal-guru-item.benar {
+            border-left: 4px solid #188650;
+        }
+
+        .soal-guru-item.salah {
+            border-left: 4px solid #d64545;
+        }
+
+        .soal-guru-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .opsi-guru-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .opsi-guru-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #ebebf3;
+            font-size: 14px;
+        }
+
+        .opsi-guru-item.kunci {
+            background: #e8f8ef;
+            border-color: #a3e9c0;
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .opsi-guru-item.jawaban-salah {
+            background: #ffe5e5;
+            border-color: #f5b7b7;
+            color: #9b1c1c;
+        }
+
+        .opsi-guru-badge {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
         .btn-primary {
             background: #6553e8;
             color: white;
@@ -785,6 +877,107 @@
 
         @endif
 
+
+        {{-- EVALUASI JAWABAN SISWA PER BUTIR SOAL --}}
+        @if(isset($soal) && $soal->isNotEmpty())
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">📋 Evaluasi Jawaban Siswa per Butir Soal</h3>
+                        <p style="color: #777394; font-size: 13px;">Daftar butir soal, jawaban yang dipilih siswa, serta kunci jawaban sistem.</p>
+                    </div>
+                </div>
+
+                <div class="eval-stats-guru">
+                    <div class="eval-stat-guru-box">
+                        <div class="eval-stat-guru-num" style="color: #188650;">{{ $totalBenar ?? 0 }}</div>
+                        <div class="eval-stat-guru-label">Jawaban Benar</div>
+                    </div>
+                    <div class="eval-stat-guru-box">
+                        <div class="eval-stat-guru-num" style="color: #d64545;">{{ $totalSalah ?? 0 }}</div>
+                        <div class="eval-stat-guru-label">Jawaban Salah</div>
+                    </div>
+                    <div class="eval-stat-guru-box">
+                        <div class="eval-stat-guru-num" style="color: #5b4ae3;">{{ count($soal) }}</div>
+                        <div class="eval-stat-guru-label">Total Butir Soal</div>
+                    </div>
+                </div>
+
+                @foreach($soal as $itemSoal)
+                    @php
+                        $jawabanDipilih = $draftJawaban->get($itemSoal->id_soal)?->jawaban_dipilih;
+                        $kunciBenar = $itemSoal->jawaban ? strtoupper($itemSoal->jawaban) : null;
+                        $isBenar = $jawabanDipilih && $kunciBenar && strtoupper($jawabanDipilih) === $kunciBenar;
+                        $opsiMap = [
+                            'A' => $itemSoal->opsi_a,
+                            'B' => $itemSoal->opsi_b,
+                            'C' => $itemSoal->opsi_c,
+                            'D' => $itemSoal->opsi_d,
+                            'E' => $itemSoal->opsi_e,
+                        ];
+                    @endphp
+
+                    <div class="soal-guru-item {{ $isBenar ? 'benar' : 'salah' }}">
+                        <div class="soal-guru-head">
+                            <strong style="color: #29274a; font-size: 15px;">
+                                Soal #{{ $loop->iteration }}
+                                <span style="font-weight: normal; font-size: 13px; color: #777394; margin-left: 6px;">
+                                    (Bobot: {{ $itemSoal->bobot ?? 0 }}%)
+                                </span>
+                            </strong>
+
+                            @if($isBenar)
+                                <span class="badge badge-green">
+                                    ✓ Benar (+{{ $itemSoal->bobot ?? 0 }}%)
+                                </span>
+                            @elseif($jawabanDipilih)
+                                <span class="badge badge-red">
+                                    ✗ Salah (Siswa pilih: {{ strtoupper($jawabanDipilih) }})
+                                </span>
+                            @else
+                                <span class="badge badge-yellow">
+                                    ○ Tidak Dijawab
+                                </span>
+                            @endif
+                        </div>
+
+                        <div style="font-size: 15px; line-height: 1.5; color: #202044; margin-bottom: 12px;">
+                            {{ $itemSoal->pertanyaan }}
+                        </div>
+
+                        <div class="opsi-guru-list">
+                            @foreach($opsiMap as $huruf => $teksOpsi)
+                                @if($teksOpsi)
+                                    @php
+                                        $isKunci = $kunciBenar === $huruf;
+                                        $isDipilih = strtoupper($jawabanDipilih ?? '') === $huruf;
+                                        $cls = '';
+                                        if ($isKunci) {
+                                            $cls = 'kunci';
+                                        } elseif ($isDipilih && !$isBenar) {
+                                            $cls = 'jawaban-salah';
+                                        }
+                                    @endphp
+
+                                    <div class="opsi-guru-item {{ $cls }}">
+                                        <strong>{{ $huruf }}.</strong>
+                                        <span>{{ $teksOpsi }}</span>
+
+                                        @if($isKunci && $isDipilih)
+                                            <span class="opsi-guru-badge badge-green">✓ Jawaban Siswa (Benar)</span>
+                                        @elseif($isKunci)
+                                            <span class="opsi-guru-badge badge-green">✓ Kunci Jawaban</span>
+                                        @elseif($isDipilih)
+                                            <span class="opsi-guru-badge badge-red">✗ Pilihan Siswa (Salah)</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         {{-- VALIDASI NILAI --}}
 

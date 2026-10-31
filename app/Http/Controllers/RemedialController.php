@@ -21,6 +21,9 @@ class RemedialController extends Controller
             'kuisRemedial',
             'kuisAsal',
         ])
+            ->whereHas('kuisAsal', function ($q) {
+                $q->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan']);
+            })
             ->latest('id_remedial')
             ->get();
 
@@ -37,13 +40,12 @@ class RemedialController extends Controller
     {
         /*
          * Kuis yang dapat dijadikan asal remedial.
-         *
-         * Kuis remedial tidak boleh menjadi
-         * kuis asal remedial lagi.
+         * Sesuai ketentuan: tugas remedial hanya diberikan
+         * untuk kuis yang berkategori 'ulangan'.
          */
         $kuisAsal = Kuis::where('is_aktif', true)
             ->where('status_publikasi', 'terbit')
-            ->where('kategori', '!=', 'remedial')
+            ->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan'])
             ->whereNotNull('kkm')
             ->orderByDesc('created_at')
             ->get();
@@ -102,12 +104,12 @@ class RemedialController extends Controller
                 ]);
         }
 
-        if ($kuisAsal->kategori === 'remedial') {
+        if (strtolower(trim($kuisAsal->kategori)) !== 'ulangan') {
             return back()
                 ->withInput()
                 ->withErrors([
                     'id_kuis_asal' =>
-                        'Kuis remedial tidak dapat dijadikan kuis asal.',
+                        'Tugas remedial hanya dapat dibuat untuk kuis dengan kategori Ulangan.',
                 ]);
         }
 
@@ -259,10 +261,13 @@ class RemedialController extends Controller
             return back()->with('error', 'Kuis asal tidak ditemukan.');
         }
 
+        if (strtolower(trim($kuisAsal->kategori)) !== 'ulangan') {
+            return back()->with('error', 'Tugas remedial hanya berlaku untuk kuis dengan kategori Ulangan.');
+        }
+
         $hasilSiswa = Mengerjakan::with('siswa')
             ->where('id_kuis', $kuisAsal->id_kuis)
             ->where('status_pengerjaan', 'final')
-            ->where('status_validasi', 'sudah divalidasi')
             ->whereNotNull('nilai')
             ->where('nilai', '<', $kuisAsal->kkm)
             ->orderBy('nilai')

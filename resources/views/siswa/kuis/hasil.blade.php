@@ -356,20 +356,193 @@
             padding: 14px 22px;
             border-radius: 14px;
             font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
         }
 
         .btn:hover {
             background: #5948dd;
         }
 
+        .btn-ulang {
+            background: #e67e22;
+        }
+
+        .btn-ulang:hover {
+            background: #d35400;
+        }
+
         .btn.outline {
             background: white;
             color: #5d4be4;
             border: 1px solid #ddd9f8;
+            font-weight: normal;
         }
 
         .btn.outline:hover {
             background: #f5f3ff;
+        }
+
+        /* EVALUASI SOAL */
+        .evaluasi-wrapper {
+            margin-top: 35px;
+        }
+
+        .eval-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .eval-stat-box {
+            flex: 1;
+            min-width: 140px;
+            background: #f8f7fd;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .eval-stat-num {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .eval-stat-label {
+            font-size: 13px;
+            color: #777394;
+            margin-top: 4px;
+        }
+
+        .soal-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-top: 18px;
+            box-shadow: 0 4px 16px rgba(70,60,130,.05);
+            border: 1px solid #eeeef5;
+        }
+
+        .soal-card.benar {
+            border-left: 5px solid #20a653;
+        }
+
+        .soal-card.salah {
+            border-left: 5px solid #d93636;
+        }
+
+        .soal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .soal-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a3eb3;
+        }
+
+        .soal-status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .soal-status-badge.benar {
+            background: #e7f8ec;
+            color: #20a653;
+        }
+
+        .soal-status-badge.salah {
+            background: #fde8e8;
+            color: #d93636;
+        }
+
+        .soal-pertanyaan {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+            color: #202044;
+        }
+
+        .opsi-review-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .opsi-review-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #fbfbfe;
+            border: 1px solid #eeeef6;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .opsi-review-item.kunci {
+            background: #eafaf1;
+            border-color: #a3e9c0;
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .opsi-review-item.jawaban-salah {
+            background: #fdf2f2;
+            border-color: #f5b7b7;
+            color: #9b1c1c;
+        }
+
+        .opsi-label {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #eae8fc;
+            color: #5d4be4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .opsi-review-item.kunci .opsi-label {
+            background: #20a653;
+            color: white;
+        }
+
+        .opsi-review-item.jawaban-salah .opsi-label {
+            background: #d93636;
+            color: white;
+        }
+
+        .opsi-status-text {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .opsi-status-text.kunci {
+            background: #20a653;
+            color: white;
+        }
+
+        .opsi-status-text.jawaban-kamu {
+            background: #d93636;
+            color: white;
         }
 
         a:focus-visible {
@@ -538,6 +711,21 @@
                     KKM: {{ $kuis->kkm ?? '-' }}
                 </div>
 
+                <div class="eval-stats" style="margin-top: 25px; text-align: center;">
+                    <div class="eval-stat-box">
+                        <div class="eval-stat-num" style="color: #20a653;">{{ $totalBenar ?? 0 }}</div>
+                        <div class="eval-stat-label">Jawaban Benar</div>
+                    </div>
+                    <div class="eval-stat-box">
+                        <div class="eval-stat-num" style="color: #d93636;">{{ $totalSalah ?? 0 }}</div>
+                        <div class="eval-stat-label">Jawaban Salah</div>
+                    </div>
+                    <div class="eval-stat-box">
+                        <div class="eval-stat-num" style="color: #5d4be4;">{{ count($soal ?? []) }}</div>
+                        <div class="eval-stat-label">Total Soal</div>
+                    </div>
+                </div>
+
             </div>
 
 
@@ -641,15 +829,116 @@
 
         </div>
 
+        @php
+            $katKuis = strtolower(trim($kuis->kategori ?? ''));
+            $bolehUlang = in_array($katKuis, ['kuis harian', 'pre-test', 'pass-test']);
+        @endphp
+
+        <!-- EVALUASI SOAL BENAR & SALAH -->
+        @if(isset($soal) && $soal->isNotEmpty())
+            <div class="evaluasi-wrapper">
+                <div class="section-card">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h2>📋 Evaluasi Soal (Benar &amp; Salah)</h2>
+                            <p>Pelajari butir soal untuk mengevaluasi pemahaman materi Anda.</p>
+                        </div>
+                        <div style="font-size: 14px; color: #777394;">
+                            Total {{ count($soal) }} Butir Soal
+                        </div>
+                    </div>
+
+                    @foreach($soal as $itemSoal)
+                        @php
+                            $jawabanDipilih = $draftJawaban->get($itemSoal->id_soal)?->jawaban_dipilih;
+                            $kunciBenar = $itemSoal->jawaban ? strtoupper($itemSoal->jawaban) : null;
+                            $isBenar = $jawabanDipilih && $kunciBenar && strtoupper($jawabanDipilih) === $kunciBenar;
+                            $opsiMap = [
+                                'A' => $itemSoal->opsi_a,
+                                'B' => $itemSoal->opsi_b,
+                                'C' => $itemSoal->opsi_c,
+                                'D' => $itemSoal->opsi_d,
+                                'E' => $itemSoal->opsi_e,
+                            ];
+                        @endphp
+
+                        <div class="soal-card {{ $isBenar ? 'benar' : 'salah' }}">
+                            <div class="soal-card-header">
+                                <div class="soal-card-title">
+                                    Soal #{{ $loop->iteration }}
+                                    <span style="font-size: 13px; font-weight: normal; color: #777394; margin-left: 8px;">
+                                        (Bobot: {{ $itemSoal->bobot ?? 0 }}%)
+                                    </span>
+                                </div>
+
+                                @if($isBenar)
+                                    <span class="soal-status-badge benar">
+                                        ✓ Jawaban Benar (+{{ $itemSoal->bobot ?? 0 }}%)
+                                    </span>
+                                @elseif($jawabanDipilih)
+                                    <span class="soal-status-badge salah">
+                                        ✗ Jawaban Salah (Kamu pilih: {{ strtoupper($jawabanDipilih) }})
+                                    </span>
+                                @else
+                                    <span class="soal-status-badge salah">
+                                        ○ Tidak Dijawab
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="soal-pertanyaan">
+                                {{ $itemSoal->pertanyaan }}
+                            </div>
+
+                            <div class="opsi-review-list">
+                                @foreach($opsiMap as $huruf => $teksOpsi)
+                                    @if($teksOpsi)
+                                        @php
+                                            $isKunci = $kunciBenar === $huruf;
+                                            $isDipilihSiswa = strtoupper($jawabanDipilih ?? '') === $huruf;
+                                            $itemClass = '';
+                                            if ($isKunci) {
+                                                $itemClass = 'kunci';
+                                            } elseif ($isDipilihSiswa && !$isBenar) {
+                                                $itemClass = 'jawaban-salah';
+                                            }
+                                        @endphp
+
+                                        <div class="opsi-review-item {{ $itemClass }}">
+                                            <div class="opsi-label">{{ $huruf }}</div>
+                                            <div class="opsi-teks">{{ $teksOpsi }}</div>
+
+                                            @if($isKunci && $isDipilihSiswa)
+                                                <span class="opsi-status-text kunci">✓ Pilihan Kamu (Benar)</span>
+                                            @elseif($isKunci)
+                                                <span class="opsi-status-text kunci">✓ Kunci Jawaban</span>
+                                            @elseif($isDipilihSiswa)
+                                                <span class="opsi-status-text jawaban-kamu">✗ Pilihan Kamu (Salah)</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <div class="actions">
 
-            <a href="{{ route('siswa.remedial.index') }}" class="btn">
-                Lihat tugas remedial
-            </a>
+            @if(!$lulus && $bolehUlang)
+                <a href="{{ route('siswa.kuis.mulai', $kuis->id_kuis) }}" class="btn btn-ulang">
+                    ↻ Kerjakan Ulang Kuis Sekarang
+                </a>
+            @elseif(!$lulus && $katKuis === 'ulangan')
+                <a href="{{ route('siswa.remedial.index') }}" class="btn">
+                    Lihat Tugas Remedial
+                </a>
+            @endif
 
             <a href="{{ route('siswa.kuis.index') }}" class="btn outline">
-                ← Kembali ke daftar kuis
+                ← Kembali ke Daftar Kuis
             </a>
 
         </div>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Services\KuisSubmissionService;
 use App\Models\Kuis;
+use App\Models\Mapel;
+use App\Models\Materi;
 use App\Models\Soal;
 use App\Models\SesiKuis;
 use App\Models\DraftJawaban;
@@ -19,7 +21,7 @@ class SiswaKuisController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -27,20 +29,66 @@ class SiswaKuisController extends Controller
         // supaya nilai otomatis muncul saat halaman dibuka.
         $this->submission->selesaikanMilikSiswa($user->id_user);
 
+        $idMapel = $request->query('mapel');
+        $idMateri = $request->query('materi');
+
+        $mapelAktif = Mapel::where('is_aktif', 1)
+            ->withCount(['kuis' => function ($q) {
+                $q->where('status_publikasi', 'terbit')
+                  ->where('is_aktif', true);
+            }])
+            ->orderBy('nama_mapel')
+            ->get();
+
+        $mapelTerpilih = null;
+        $daftarMateri = collect();
+        $materiTerpilih = null;
+
+        if ($idMapel) {
+            $mapelTerpilih = Mapel::where('id_mapel', $idMapel)->first();
+            $daftarMateri = Materi::where('id_mapel', $idMapel)
+                ->orderBy('bab')
+                ->orderBy('judul')
+                ->with(['kuis' => function ($q) {
+                    $q->where('status_publikasi', 'terbit')
+                      ->where('is_aktif', true);
+                }])
+                ->get();
+
+            if ($idMateri) {
+                $materiTerpilih = $daftarMateri->firstWhere('id_materi', $idMateri);
+            }
+        }
+
         $remedial = RemedialSiswa::with('kuisRemedial')
             ->whereHas('mengerjakanAsal', function ($query) use ($user) {
                 $query->where('id_user', $user->id_user);
             })
             ->where('status', 'ditugaskan')
+            ->when($idMapel, function ($q) use ($idMapel) {
+                $q->whereHas('kuisRemedial', fn ($sub) => $sub->where('id_mapel', $idMapel));
+            })
             ->get();
 
-        $kuis = Kuis::where('status_publikasi', 'terbit')
+        $kuisQuery = Kuis::where('status_publikasi', 'terbit')
             ->where('is_aktif', true)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->with(['soal', 'mapel', 'materi'])
+            ->orderBy('created_at', 'desc');
+
+        if ($idMapel) {
+            $kuisQuery->where('id_mapel', $idMapel);
+        }
+
+        if ($idMateri) {
+            $kuisQuery->whereHas('materi', function ($q) use ($idMateri) {
+                $q->where('materi.id_materi', $idMateri);
+            });
+        }
+
+        $kuis = $kuisQuery->get();
 
         $kuis = $kuis->filter(function (Kuis $item) use ($user) {
-            if ($item->kategori !== 'remedial') {
+            if (strtolower(trim($item->kategori)) !== 'remedial') {
                 return true;
             }
 
@@ -55,7 +103,83 @@ class SiswaKuisController extends Controller
                 ->exists();
         })->values();
 
-        return view('siswa.kuis.index', compact('kuis', 'remedial'));
+        // Riwayat nilai siswa untuk menentukan progresi level Kuis Harian
+        $nilaiSiswa = Mengerjakan::where('id_user', $user->id_user)
+            ->where('status_pengerjaan', 'final')
+            ->get()
+            ->groupBy('id_kuis');
+
+        // Pengecekan kelulusan kuis harian per materi & per mapel
+        $lulusMudahPerMateri = [];
+        $lulusSedangPerMateri = [];
+        $lulusMudahPerMapel = [];
+        $lulusSedangPerMapel = [];
+
+        $statusKuis = [];
+        foreach ($kuis as $item) {
+            $riwayat = $nilaiSiswa->get($item->id_kuis);
+            $nilaiTertinggi = $riwayat ? $riwayat->max('nilai') : null;
+            $sudahLulus = $nilaiTertinggi !== null && $item->kkm !== null && $nilaiTertinggi >= $item->kkm;
+
+            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
+            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
+
+            if ($isKuisHarian && $sudahLulus) {
+                if ($tingkat === 'mudah') {
+                    $lulusMudahPerMapel[$item->id_mapel] = true;
+                    foreach ($item->materi as $m) {
+                        $lulusMudahPerMateri[$m->id_materi] = true;
+                    }
+                } elseif ($tingkat === 'sedang') {
+                    $lulusSedangPerMapel[$item->id_mapel] = true;
+                    foreach ($item->materi as $m) {
+                        $lulusSedangPerMateri[$m->id_materi] = true;
+                    }
+                }
+            }
+
+            $statusKuis[$item->id_kuis] = [
+                'nilai_tertinggi' => $nilaiTertinggi,
+                'sudah_pernah' => $riwayat && $riwayat->isNotEmpty(),
+                'lulus' => $sudahLulus,
+                'terkunci' => false,
+                'alasan_kunci' => null,
+            ];
+        }
+
+        // Terapkan aturan progresi Kuis Harian (mudah -> sedang -> sulit)
+        foreach ($kuis as $item) {
+            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
+            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
+
+            if ($isKuisHarian) {
+                $idMat = $item->materi->first()?->id_materi;
+
+                if ($tingkat === 'sedang') {
+                    $lulus = $idMat ? !empty($lulusMudahPerMateri[$idMat]) : !empty($lulusMudahPerMapel[$item->id_mapel]);
+                    if (!$lulus) {
+                        $statusKuis[$item->id_kuis]['terkunci'] = true;
+                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Mudah dengan nilai >= KKM terlebih dahulu.';
+                    }
+                } elseif ($tingkat === 'sulit') {
+                    $lulus = $idMat ? !empty($lulusSedangPerMateri[$idMat]) : !empty($lulusSedangPerMapel[$item->id_mapel]);
+                    if (!$lulus) {
+                        $statusKuis[$item->id_kuis]['terkunci'] = true;
+                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Sedang dengan nilai >= KKM terlebih dahulu.';
+                    }
+                }
+            }
+        }
+
+        return view('siswa.kuis.index', compact(
+            'kuis',
+            'remedial',
+            'mapelAktif',
+            'mapelTerpilih',
+            'daftarMateri',
+            'materiTerpilih',
+            'statusKuis'
+        ));
     }
 
     public function mulai(Kuis $kuis)
@@ -118,6 +242,32 @@ class SiswaKuisController extends Controller
             }
         }
 
+        // Progresi tingkat kesulitan kuis harian (Point 1)
+        $isKuisHarian = strtolower(trim($kuis->kategori)) === 'kuis harian';
+        $tingkatKuis = strtolower(trim($kuis->tingkat_kesulitan ?? 'mudah'));
+        if ($isKuisHarian && in_array($tingkatKuis, ['sedang', 'sulit'])) {
+            $tingkatSebelumnya = $tingkatKuis === 'sulit' ? 'sedang' : 'mudah';
+            $idMat = $kuis->materi()->first()?->id_materi;
+
+            $lulusSebelumnya = Mengerjakan::where('id_user', $user->id_user)
+                ->where('status_pengerjaan', 'final')
+                ->whereHas('kuis', function ($q) use ($kuis, $tingkatSebelumnya, $idMat) {
+                    $q->where('id_mapel', $kuis->id_mapel)
+                      ->whereRaw('LOWER(TRIM(kategori)) = ?', ['kuis harian'])
+                      ->whereRaw('LOWER(TRIM(tingkat_kesulitan)) = ?', [$tingkatSebelumnya])
+                      ->when($idMat, fn ($sub) => $sub->whereHas('materi', fn ($m) => $m->where('materi.id_materi', $idMat)))
+                      ->whereRaw('mengerjakan.nilai >= kuis.kkm');
+                })
+                ->exists();
+
+            if (!$lulusSebelumnya) {
+                return back()->with(
+                    'error',
+                    "Kuis ini terkunci. Anda harus lulus kuis harian tingkat " . ucfirst($tingkatSebelumnya) . " terlebih dahulu."
+                );
+            }
+        }
+
         // Alokasi waktu wajib tersedia
         if (!$kuis->alokasi_waktu || $kuis->alokasi_waktu < 1) {
             return back()->with(
@@ -128,33 +278,23 @@ class SiswaKuisController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Khusus ulangan
+        | Pengecekan jadwal waktu mulai & selesai
         |--------------------------------------------------------------------------
-        | Siswa hanya boleh mulai dalam jendela waktu ulangan.
         */
-        if ($kuis->kategori === 'ulangan') {
+        $sekarang = now();
 
-            $sekarang = now();
+        if ($kuis->waktu_mulai && $sekarang->lt($kuis->waktu_mulai)) {
+            return back()->with(
+                'error',
+                'Kuis belum dapat dikerjakan. Dijadwalkan mulai: ' . $kuis->waktu_mulai->format('d/m/Y H:i')
+            );
+        }
 
-            if (
-                $kuis->waktu_mulai &&
-                $sekarang->lt($kuis->waktu_mulai)
-            ) {
-                return back()->with(
-                    'error',
-                    'Kuis belum dapat dikerjakan.'
-                );
-            }
-
-            if (
-                $kuis->waktu_selesai &&
-                $sekarang->gte($kuis->waktu_selesai)
-            ) {
-                return back()->with(
-                    'error',
-                    'Waktu pengerjaan kuis sudah berakhir.'
-                );
-            }
+        if ($kuis->waktu_selesai && $sekarang->gte($kuis->waktu_selesai)) {
+            return back()->with(
+                'error',
+                'Waktu pengerjaan kuis sudah berakhir.'
+            );
         }
 
         /*
@@ -195,6 +335,11 @@ class SiswaKuisController extends Controller
                 ->max('percobaan_ke');
 
             $percobaanKe = max($percobaanSesi ?? 0, $percobaanNilai ?? 0) + 1;
+
+            // Bersihkan draft jawaban lama untuk percobaan baru
+            DraftJawaban::where('id_kuis', $kuis->id_kuis)
+                ->where('id_user', $user->id_user)
+                ->delete();
 
             $sesi = SesiKuis::create([
                 'id_kuis' => $kuis->id_kuis,
@@ -486,7 +631,35 @@ class SiswaKuisController extends Controller
             }
         }
 
-        return view('siswa.kuis.hasil', compact('kuis', 'hasil', 'remedial', 'nilaiAsal', 'durasiTampil'));
+        // Ambil daftar butir soal & jawaban siswa untuk evaluasi hasil
+        $soal = $kuis->soal()->orderBy('id_soal')->get();
+        $draftJawaban = DraftJawaban::where('id_kuis', $kuis->id_kuis)
+            ->where('id_user', $user->id_user)
+            ->get()
+            ->keyBy('id_soal');
+
+        $totalBenar = 0;
+        $totalSalah = 0;
+        foreach ($soal as $s) {
+            $jw = $draftJawaban->get($s->id_soal)?->jawaban_dipilih;
+            if ($jw && $s->jawaban && strtoupper($jw) === strtoupper($s->jawaban)) {
+                $totalBenar++;
+            } else {
+                $totalSalah++;
+            }
+        }
+
+        return view('siswa.kuis.hasil', compact(
+            'kuis',
+            'hasil',
+            'remedial',
+            'nilaiAsal',
+            'durasiTampil',
+            'soal',
+            'draftJawaban',
+            'totalBenar',
+            'totalSalah'
+        ));
     }
 
     /*

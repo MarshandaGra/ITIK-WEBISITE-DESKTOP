@@ -413,50 +413,36 @@
 
 <div class="layout">
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR CBT (NAVIGASI LUAR DITUTUP) -->
 
-    <aside class="sidebar">
+    <aside class="sidebar" style="background: linear-gradient(180deg, #2c285a, #1b173d);">
 
         <div class="logo">
-            <div class="logo-icon">IT</div>
+            <div class="logo-icon" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25);">IT</div>
 
             <div>
-                <h2>ITIK</h2>
-                <span>Portal Siswa</span>
+                <h2>ITIK CBT</h2>
+                <span>Moda Ujian Aktif</span>
             </div>
         </div>
 
-        <div class="menu-title">
-            Menu Utama
+        <div style="background: rgba(255, 75, 75, 0.18); border: 1px solid rgba(255, 100, 100, 0.4); border-radius: 16px; padding: 18px 16px; margin-bottom: 25px; text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 6px;">🔒</div>
+            <div style="font-weight: bold; font-size: 15px; color: #ffb8b8; margin-bottom: 6px;">Navigasi Dikunci</div>
+            <p style="font-size: 13px; color: #e0dcf8; line-height: 1.5; margin: 0;">
+                Semua menu luar dinonaktifkan demi integritas ujian. Harap selesaikan kuis hingga tuntas.
+            </p>
         </div>
 
-        <nav class="menu">
+        <div class="menu-title" style="color: #9f9ac7;">
+            Panduan Peserta
+        </div>
 
-            <a href="{{ route('siswa.dashboard') }}">
-                ▦ &nbsp; Dashboard
-            </a>
-
-            <a href="{{ url('/siswa/materi') }}">
-                ▣ &nbsp; Materi
-            </a>
-
-            <a href="{{ url('/siswa/kuis') }}" class="active">
-                ☑ &nbsp; Kuis
-            </a>
-
-            <a href="{{ url('/siswa/nilai') }}">
-                ◉ &nbsp; Nilai Saya
-            </a>
-
-            <a href="{{ url('/siswa/remedial') }}">
-                ↻ &nbsp; Remedial
-            </a>
-
-            <a href="{{ route('profil') }}">
-                ◎ &nbsp; Profil
-            </a>
-
-        </nav>
+        <div style="font-size: 13px; color: #c4c0e6; line-height: 1.6;">
+            <p style="margin-bottom: 12px;">✓ Jawaban tersimpan otomatis saat memilih opsi.</p>
+            <p style="margin-bottom: 12px;">✓ Jangan menutup browser atau berpindah tab.</p>
+            <p style="margin-bottom: 0;">✓ Klik tombol <strong>Kumpulkan kuis</strong> jika sudah selesai.</p>
+        </div>
 
     </aside>
 
@@ -777,6 +763,60 @@ document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
     updateTimer();
 
     setInterval(updateTimer, 1000);
+
+    /* ========================================================
+       PENGUNCI NAVIGASI & KEAMANAN MODA UJIAN (CBT LOCK)
+       ======================================================== */
+    let formSubmitted = false;
+
+    // 1. Tangani submit resmi kuis
+    const formKuisSubmit = document.getElementById('form-kuis');
+    if (formKuisSubmit) {
+        formKuisSubmit.addEventListener('submit', function () {
+            formSubmitted = true;
+        });
+    }
+
+    // 2. Cegah reload / tutup tab / navigasi keluar
+    window.addEventListener('beforeunload', function (e) {
+        if (!formSubmitted && !sudahSubmit) {
+            e.preventDefault();
+            e.returnValue = 'Ujian sedang berlangsung! Jawaban Anda belum dikumpulkan. Jangan tinggalkan halaman ini.';
+            return e.returnValue;
+        }
+    });
+
+    // 3. Kunci tombol Back / Forward browser
+    history.pushState(null, document.title, location.href);
+    window.addEventListener('popstate', function () {
+        history.pushState(null, document.title, location.href);
+        alert('⚠️ PERINGATAN: Navigasi browser dinonaktifkan selama ujian berlangsung. Harap selesaikan kuis dan klik tombol "Kumpulkan kuis".');
+    });
+
+    // 4. Blokir tombol refresh keyboard (F5, Ctrl+R, Alt+Left)
+    window.addEventListener('keydown', function (e) {
+        if (
+            e.key === 'F5' ||
+            (e.ctrlKey && (e.key === 'r' || e.key === 'R')) ||
+            (e.altKey && e.key === 'ArrowLeft')
+        ) {
+            e.preventDefault();
+            alert('⚠️ Tombol refresh dan navigasi kembali dinonaktifkan selama ujian.');
+            return false;
+        }
+    });
+
+    // 5. Deteksi siswa berpindah window / tab browser
+    let switchTabCount = 0;
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            switchTabCount++;
+        } else {
+            if (switchTabCount > 0 && !formSubmitted && !sudahSubmit) {
+                alert('⚠️ PERINGATAN: Anda terdeteksi meninggalkan halaman ujian (' + switchTabCount + ' kali). Harap tetap berada di halaman ujian hingga selesai dikumpulkan!');
+            }
+        }
+    });
 </script>
 
 </body>

@@ -79,6 +79,9 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::patch('/kuis/{kuis}/publish', [KuisController::class, 'publish'])
         ->name('kuis.publish');
 
+    Route::patch('/kuis/{kuis}/unpublish', [KuisController::class, 'unpublish'])
+        ->name('kuis.unpublish');
+
 });
 
 

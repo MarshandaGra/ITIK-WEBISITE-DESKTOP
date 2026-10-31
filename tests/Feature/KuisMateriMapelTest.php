@@ -338,7 +338,7 @@ class KuisMateriMapelTest extends TestCase
         $response = $action === 'store'
             ? $this->post(route('kuis.store'), $payload)
             : $this->put(route('kuis.update', 'K001'), $payload);
-        $response->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+        $response->assertRedirect(route('kuis.index', ['mapel' => 'MP002']))->assertSessionHasNoErrors();
         $id = $action === 'store' ? 'K002' : 'K001';
         $kuis = Kuis::findOrFail($id);
         $this->assertSame('pre-test', $kuis->kategori);
@@ -365,11 +365,11 @@ class KuisMateriMapelTest extends TestCase
     {
         $this->actingAs($this->guru)->post(route('kuis.store'), $this->payload('kuis', array_merge($year, [
             'id_kuis' => 'K999', 'id_user' => 'U001', 'status_publikasi' => 'terbit', 'id_publisher' => 'U001',
-            'id_kuis_asal' => 'K001', 'waktu_mulai' => '2026-10-30 09:00:00', 'waktu_selesai' => '2026-10-30 10:00:00',
-        ])))->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            'id_kuis_asal' => 'K001',
+        ])))->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('kuis', [
             'id_kuis' => 'K002', 'id_tahun_ajaran' => 'TA001', 'id_user' => 'U002', 'status_publikasi' => 'draft',
-            'id_publisher' => null, 'waktu_mulai' => null, 'waktu_selesai' => null,
+            'id_publisher' => null,
         ]);
         $this->assertDatabaseMissing('kuis', ['id_kuis' => 'K999']);
         $this->assertDatabaseCount('remedial', 0);
@@ -429,7 +429,7 @@ class KuisMateriMapelTest extends TestCase
             $payload['materi'] = ['M001'];
         }
         $this->put(route($resource.'.update', $content->getKey()), $payload)
-            ->assertRedirect(route($resource.'.index'))->assertSessionHasNoErrors();
+            ->assertRedirect($resource === 'kuis' ? route('kuis.index', ['mapel' => 'MP003']) : route('materi.index'))->assertSessionHasNoErrors();
         $this->assertSame('MP003', $content->refresh()->mapel->getKey());
 
         $before = $this->snapshot();
@@ -440,7 +440,7 @@ class KuisMateriMapelTest extends TestCase
         $this->app['session.store']->forget('errors');
 
         $this->put(route($resource.'.update', $content->getKey()), array_replace($payload, ['id_mapel' => 'MP002']))
-            ->assertRedirect(route($resource.'.index'))->assertSessionHasNoErrors();
+            ->assertRedirect($resource === 'kuis' ? route('kuis.index', ['mapel' => 'MP002']) : route('materi.index'))->assertSessionHasNoErrors();
         $this->assertSame('MP002', $content->refresh()->mapel->getKey());
     }
 
@@ -496,7 +496,7 @@ class KuisMateriMapelTest extends TestCase
         $this->assertSame('TA002', TahunAjaran::aktif()->getKey());
         $this->actingAs($this->guru)->put(route('kuis.update', 'K001'), $this->payload('kuis', array_merge($year, [
             'id_mapel' => 'MP002', 'tingkat_kesulitan' => 'sulit', 'materi' => ['M001'],
-        ])))->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+        ])))->assertRedirect(route('kuis.index', ['mapel' => 'MP002']))->assertSessionHasNoErrors();
         $kuis = Kuis::findOrFail('K001');
         $this->assertSame('TA001', $kuis->tahunAjaran->getKey());
         $this->assertSame('MP002', $kuis->id_mapel);
@@ -509,7 +509,7 @@ class KuisMateriMapelTest extends TestCase
         TahunAjaran::query()->update(['is_aktif' => false]);
         $this->actingAs($this->guru)->put(route('kuis.update', 'K001'), $this->payload('kuis', [
             'id_tahun_ajaran' => 'TA999', 'id_user' => 'U001', 'id_kuis' => 'K999', 'status_publikasi' => 'terbit',
-        ]))->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+        ]))->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('kuis', [
             'id_kuis' => 'K001', 'id_tahun_ajaran' => 'TA001', 'id_user' => 'U002', 'status_publikasi' => 'draft',
         ]);
@@ -527,7 +527,7 @@ class KuisMateriMapelTest extends TestCase
             $this->makeMateri('M010');
         }
         $this->actingAs($this->guru)->post(route($resource.'.store'), $this->payload($resource))
-            ->assertRedirect(route($resource.'.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route($resource.'.index', $resource === 'kuis' ? ['mapel' => 'MP001'] : []))->assertSessionHasNoErrors();
         $id = $resource === 'kuis' ? 'K011' : 'M011';
         $this->assertDatabaseHas($resource, ['id_'.$resource => $id, 'id_mapel' => 'MP001', 'id_user' => 'U002']);
     }
@@ -536,11 +536,11 @@ class KuisMateriMapelTest extends TestCase
     {
         $beforeQuestion = (array) DB::table('soal')->where('id_soal', 'S001')->first();
         $this->actingAs($this->guru)->put(route('kuis.update', 'K001'), $this->payload('kuis', ['materi' => ['M002']]))
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('materi_kuis', ['id_kuis' => 'K001', 'id_materi' => 'M001']);
         $this->assertDatabaseHas('materi_kuis', ['id_kuis' => 'K001', 'id_materi' => 'M002']);
         $this->put(route('kuis.update', 'K001'), $this->payload('kuis'))
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseCount('materi_kuis', 0);
         $this->assertSame($beforeQuestion, (array) DB::table('soal')->where('id_soal', 'S001')->first());
         $this->assertDatabaseCount('materi', 2);
@@ -571,7 +571,7 @@ class KuisMateriMapelTest extends TestCase
     {
         $payload = $this->payload('kuis', ['kategori' => 'remedial', 'id_kuis_asal' => 'K001', 'materi' => ['M001', 'M002']]);
         $this->actingAs($this->guru)->post(route('kuis.store'), $payload)
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $remedial = Kuis::findOrFail('K002');
         $this->assertSame('draft', $remedial->status_publikasi);
         $this->assertSame('TA001', $remedial->id_tahun_ajaran);
@@ -586,7 +586,7 @@ class KuisMateriMapelTest extends TestCase
         $payload['id_mapel'] = 'MP002';
         $payload['tingkat_kesulitan'] = 'sulit';
         $this->put(route('kuis.update', 'K002'), $payload)
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP002']))->assertSessionHasNoErrors();
         $this->assertSame($beforeLink, (array) DB::table('remedial')->first());
         $this->assertDatabaseMissing('materi_kuis', ['id_kuis' => 'K002']);
         $this->assertDatabaseHas('materi_kuis', ['id_kuis' => 'K001', 'id_materi' => 'M001']);
@@ -614,7 +614,7 @@ class KuisMateriMapelTest extends TestCase
             'waktu_selesai' => '2026-10-30 10:00:00', 'materi' => ['M001', 'M002'],
         ]);
         $this->actingAs($this->guru)->post(route('kuis.store'), $payload)
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('kuis', [
             'id_kuis' => 'K002', 'kategori' => 'ulangan', 'status_publikasi' => 'draft',
             'waktu_mulai' => '2026-10-30 09:00:00', 'waktu_selesai' => '2026-10-30 10:00:00',
@@ -623,12 +623,14 @@ class KuisMateriMapelTest extends TestCase
         $payload['waktu_mulai'] = '2026-10-31 09:00:00';
         $payload['waktu_selesai'] = '2026-10-31 11:00:00';
         $this->put(route('kuis.update', 'K002'), $payload)
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertSame('2026-10-31 09:00:00', Kuis::findOrFail('K002')->waktu_mulai->format('Y-m-d H:i:s'));
         $this->assertSame('2026-10-31 11:00:00', Kuis::findOrFail('K002')->waktu_selesai->format('Y-m-d H:i:s'));
+        // Saat kategori diubah ke pre-test, hilangkan waktu_mulai/selesai dari payload agar jadwal dikosongkan
         $payload['kategori'] = 'pre-test';
+        unset($payload['waktu_mulai'], $payload['waktu_selesai']);
         $this->put(route('kuis.update', 'K002'), $payload)
-            ->assertRedirect(route('kuis.index'))->assertSessionHasNoErrors();
+            ->assertRedirect(route('kuis.index', ['mapel' => 'MP001']))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('kuis', ['id_kuis' => 'K002', 'waktu_mulai' => null, 'waktu_selesai' => null]);
         $this->assertCount(2, Kuis::findOrFail('K002')->materi);
     }

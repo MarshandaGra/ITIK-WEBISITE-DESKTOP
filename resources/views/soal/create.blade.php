@@ -907,29 +907,21 @@
                     </div>
 
 
-                    <!-- BOBOT -->
+                    <!-- BOBOT OTOMATIS -->
 
                     <div class="form-group">
 
                         <label>
-                            Bobot Nilai (%)
-                            <span class="required">*</span>
+                            Bobot Nilai
                         </label>
 
-                        <input
-                            type="number"
-                            name="bobot"
-                            value="{{ old('bobot') }}"
-                            min="0.01"
-                            max="100"
-                            step="0.01"
-                            placeholder="Contoh: 10"
-                            required
-                        >
-
-                        <small class="form-help">
-                            Total bobot semua soal tidak boleh lebih dari 100%.
-                        </small>
+                        <div style="background:#eef9ef;border:1.5px solid #c3e6cb;border-radius:10px;padding:12px 15px;font-size:13px;color:#25834a;display:flex;align-items:center;gap:9px;">
+                            <span style="font-size:17px;">⚖️</span>
+                            <span>
+                                Bobot dihitung <strong>otomatis</strong> oleh sistem secara merata
+                                (100 ÷ jumlah soal). Kamu tidak perlu mengisinya.
+                            </span>
+                        </div>
 
                     </div>
 

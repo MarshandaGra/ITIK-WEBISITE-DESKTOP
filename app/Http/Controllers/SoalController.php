@@ -48,6 +48,7 @@ class SoalController extends Controller
 
         /*
          * Validasi data soal.
+         * Bobot dihitung otomatis oleh sistem agar guru tidak kerepotan.
          */
         $validated = $request->validate([
             'pertanyaan' => 'required|string',
@@ -60,7 +61,7 @@ class SoalController extends Controller
                 'required',
                 Rule::in(['A', 'B', 'C', 'D', 'E']),
             ],
-            'bobot' => 'required|numeric|min:0.01|max:100',
+            'bobot' => 'nullable|numeric|min:0.01|max:100',
             'tingkat_kesulitan' => [
                 'nullable',
                 Rule::in(['mudah', 'sedang', 'sulit']),
@@ -100,33 +101,6 @@ class SoalController extends Controller
         }
 
         /*
-         * Total bobot soal yang sudah ada.
-         */
-        $totalBobot = (float) $kuis->soal()->sum('bobot');
-
-        $totalSetelahTambah =
-            $totalBobot + (float) $validated['bobot'];
-
-        /*
-         * Total bobot tidak boleh lebih dari 100.
-         */
-        if ($totalSetelahTambah > 100) {
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    'Total bobot soal tidak boleh lebih dari 100. ' .
-                    'Total saat ini: ' .
-                    number_format($totalBobot, 2) .
-                    ', bobot soal baru: ' .
-                    number_format($validated['bobot'], 2) .
-                    ', sehingga menjadi ' .
-                    number_format($totalSetelahTambah, 2) .
-                    '.'
-                );
-        }
-
-        /*
          * Generate ID soal.
          */
         $jumlahSoal = $kuis->soal()->count();
@@ -153,7 +127,7 @@ class SoalController extends Controller
         }
 
         /*
-         * Simpan soal.
+         * Simpan soal. Tingkat kesulitan default mengikuti tingkat kesulitan kuis.
          */
         $kuis->soal()->create([
             'id_soal' => $idSoal,
@@ -164,14 +138,16 @@ class SoalController extends Controller
             'opsi_d' => $validated['opsi_d'],
             'opsi_e' => $validated['opsi_e'] ?? null,
             'jawaban' => $validated['jawaban'],
-            'bobot' => $validated['bobot'],
-            'tingkat_kesulitan' =>
-                $validated['tingkat_kesulitan'] ?? null,
+            'bobot' => 1,
+            'tingkat_kesulitan' => $validated['tingkat_kesulitan'] ?? $kuis->tingkat_kesulitan ?? 'mudah',
         ]);
+
+        // Seimbangkan bobot seluruh soal secara otomatis (skala 100 dibagi rata)
+        $this->seimbangkanBobot($kuis);
 
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
-            ->with('success', 'Soal berhasil ditambahkan.');
+            ->with('success', 'Soal berhasil ditambahkan. Bobot nilai telah dihitung otomatis.');
     }
 
     public function show(Kuis $kuis, Soal $soal)
@@ -227,7 +203,7 @@ class SoalController extends Controller
                 'required',
                 Rule::in(['A', 'B', 'C', 'D', 'E']),
             ],
-            'bobot' => 'required|numeric|min:0.01|max:100',
+            'bobot' => 'nullable|numeric|min:0.01|max:100',
             'tingkat_kesulitan' => [
                 'nullable',
                 Rule::in(['mudah', 'sedang', 'sulit']),
@@ -267,39 +243,7 @@ class SoalController extends Controller
         }
 
         /*
-         * Hitung total bobot.
-         *
-         * Bobot soal yang sedang diedit
-         * dikeluarkan terlebih dahulu.
-         */
-        $totalBobotLain = (float) $kuis->soal()
-            ->where('id_soal', '!=', $soal->id_soal)
-            ->sum('bobot');
-
-        $totalSetelahUpdate =
-            $totalBobotLain + (float) $validated['bobot'];
-
-        /*
-         * Total bobot tidak boleh lebih dari 100.
-         */
-        if ($totalSetelahUpdate > 100) {
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    'Total bobot soal tidak boleh lebih dari 100. ' .
-                    'Total bobot soal lain: ' .
-                    number_format($totalBobotLain, 2) .
-                    ', bobot baru: ' .
-                    number_format($validated['bobot'], 2) .
-                    ', sehingga menjadi ' .
-                    number_format($totalSetelahUpdate, 2) .
-                    '.'
-                );
-        }
-
-        /*
-         * Update soal.
+         * Update soal. Bobot diseimbangkan otomatis.
          */
         $soal->update([
             'pertanyaan' => $validated['pertanyaan'],
@@ -309,10 +253,11 @@ class SoalController extends Controller
             'opsi_d' => $validated['opsi_d'],
             'opsi_e' => $validated['opsi_e'] ?? null,
             'jawaban' => $validated['jawaban'],
-            'bobot' => $validated['bobot'],
             'tingkat_kesulitan' =>
-                $validated['tingkat_kesulitan'] ?? null,
+                $validated['tingkat_kesulitan'] ?? $soal->tingkat_kesulitan ?? $kuis->tingkat_kesulitan ?? 'mudah',
         ]);
+
+        $this->seimbangkanBobot($kuis);
 
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
@@ -334,9 +279,33 @@ class SoalController extends Controller
 
         $soal->delete();
 
+        $this->seimbangkanBobot($kuis);
+
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
             ->with('success', 'Soal berhasil dihapus.');
+    }
+
+    private function seimbangkanBobot(Kuis $kuis): void
+    {
+        $soalList = $kuis->soal()->orderBy('id_soal')->get();
+        $total = $soalList->count();
+
+        if ($total === 0) {
+            return;
+        }
+
+        $bobotPerSoal = round(100 / $total, 2);
+        $totalTerhitung = $bobotPerSoal * $total;
+        $selisih = round(100 - $totalTerhitung, 2);
+
+        foreach ($soalList as $index => $item) {
+            $bobotIni = $bobotPerSoal;
+            if ($index === $total - 1 && $selisih != 0) {
+                $bobotIni = round($bobotIni + $selisih, 2);
+            }
+            $item->update(['bobot' => $bobotIni]);
+        }
     }
 
     private function checkSoalBelongsToKuis(

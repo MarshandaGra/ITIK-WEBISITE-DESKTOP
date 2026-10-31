@@ -528,7 +528,7 @@
 
 
             <a
-                href="{{ route('kuis.index') }}"
+                href="{{ $mapelTerpilih ? route('kuis.index', ['mapel' => $mapelTerpilih]) : route('kuis.index') }}"
                 class="btn-back"
             >
                 ← Kembali ke Kuis
@@ -620,7 +620,7 @@
                     <select id="id_mapel" name="id_mapel" class="form-control" required>
                         <option value="">-- Pilih Mata Pelajaran --</option>
                         @foreach ($mapel as $itemMapel)
-                            <option value="{{ $itemMapel->id_mapel }}" @selected(old('id_mapel') === $itemMapel->id_mapel)>{{ $itemMapel->kode_mapel }} - {{ $itemMapel->nama_mapel }}</option>
+                            <option value="{{ $itemMapel->id_mapel }}" @selected(old('id_mapel', $mapelTerpilih) === $itemMapel->id_mapel)>{{ $itemMapel->kode_mapel }} - {{ $itemMapel->nama_mapel }}</option>
                         @endforeach
                     </select>
                     @if ($mapel->isEmpty())
@@ -716,36 +716,39 @@
                     <div class="form-group">
 
                         <label>
-                            Materi
+                            Materi (sesuai Mata Pelajaran)
                         </label>
 
                         <select
+                            id="materi-select"
                             name="materi[]"
                             multiple
                             class="form-control"
                         >
 
-                            @foreach ($materi as $materi)
+                            @foreach ($materi as $itemMateri)
 
                                 <option
-                                    value="{{ $materi->id_materi }}"
-                                    {{ in_array($materi->id_materi, old('materi', [])) ? 'selected' : '' }}
+                                    value="{{ $itemMateri->id_materi }}"
+                                    data-mapel="{{ $itemMateri->id_mapel }}"
+                                    {{ in_array($itemMateri->id_materi, old('materi', [])) ? 'selected' : '' }}
                                 >
-
-                                    {{ $materi->judul }}
-
-                                    @if ($materi->bab)
-                                        - {{ $materi->bab }}
+                                    @if ($itemMateri->bab)
+                                        [{{ $itemMateri->bab }}] -
                                     @endif
-
+                                    {{ $itemMateri->judul }}
                                 </option>
 
                             @endforeach
 
                         </select>
 
+                        <p id="materi-empty-hint" class="form-hint" style="display: none; color: #c98200; font-weight: bold;">
+                            ⚠️ Belum ada materi untuk mata pelajaran ini. Silakan buat materi terlebih dahulu di menu Materi.
+                        </p>
+
                         <p class="form-hint">
-                            Tekan Ctrl + klik untuk memilih lebih dari satu materi.
+                            Tekan Ctrl + klik untuk memilih lebih dari satu materi. Materi disesuaikan otomatis dengan mata pelajaran yang dipilih.
                         </p>
 
                     </div>
@@ -990,6 +993,38 @@
 
     updateForm();
 
+    // Filter Materi sesuai Mapel yang dipilih
+    const selectMapel = document.getElementById('id_mapel');
+    const selectMateri = document.getElementById('materi-select');
+    const hintMateriKosong = document.getElementById('materi-empty-hint');
+
+    function filterMateriByMapel() {
+        if (!selectMapel || !selectMateri) return;
+        const mapelId = selectMapel.value;
+        let visibleCount = 0;
+
+        Array.from(selectMateri.options).forEach(opt => {
+            const optMapel = opt.getAttribute('data-mapel');
+            if (!mapelId || optMapel === mapelId) {
+                opt.style.display = '';
+                opt.disabled = false;
+                visibleCount++;
+            } else {
+                opt.style.display = 'none';
+                opt.disabled = true;
+                opt.selected = false;
+            }
+        });
+
+        if (hintMateriKosong) {
+            hintMateriKosong.style.display = (mapelId && visibleCount === 0) ? 'block' : 'none';
+        }
+    }
+
+    if (selectMapel) {
+        selectMapel.addEventListener('change', filterMateriByMapel);
+        filterMateriByMapel();
+    }
 </script>
 
 

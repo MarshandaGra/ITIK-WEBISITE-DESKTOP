@@ -58,8 +58,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('kuis.show', $kuis->id_kuis) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke detail kuis
+        <a href="{{ route('kuis.show', $kuis->id_kuis) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Kelola Bank Soal</h1>
         <p>Kuis: <strong>{{ $kuis->judul }}</strong> &bull; Total: {{ $soal->count() }} Soal</p>

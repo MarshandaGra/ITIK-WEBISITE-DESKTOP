@@ -180,6 +180,97 @@
         font-size: 11px;
         font-weight: 700;
     }
+
+    /* KELAS CARDS GURU */
+    .kelas-section {
+        margin-bottom: 24px;
+    }
+    .kelas-grid-guru {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    .kelas-card-guru {
+        background: white;
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        padding: 18px 20px;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 18px #29263d04;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .kelas-card-guru:hover {
+        transform: translateY(-2px);
+        border-color: var(--purple);
+        box-shadow: 0 8px 25px rgba(85,66,220,.1);
+        text-decoration: none;
+    }
+    .kelas-card-guru.active {
+        border-color: var(--purple);
+        background: #fbfafd;
+        box-shadow: 0 0 0 2px var(--purple);
+    }
+    .kelas-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .kelas-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+    }
+    .kelas-stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .kelas-stat-box {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 8px 10px;
+    }
+    .kelas-stat-box .label {
+        font-size: 11px;
+        color: var(--muted);
+        display: block;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .kelas-stat-box .value {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--ink);
+    }
+    .kelas-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--purple);
+    }
+    .banner-kelas-active {
+        background: linear-gradient(135deg, #ede9fc 0%, #f6f5fc 100%);
+        border: 1px solid #d0c8ed;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
 </style>
 @endpush
 
@@ -188,9 +279,76 @@
 <div class="page-heading">
     <div>
         <h1>Daftar Nilai Siswa</h1>
-        <p>Pantau hasil pengerjaan kuis siswa dan berikan tugas remedial bagi yang belum lulus ulangan.</p>
+        <p>Pantau hasil pengerjaan kuis siswa per kelas dan berikan tugas remedial bagi yang belum lulus ulangan.</p>
     </div>
 </div>
+
+{{-- LEVEL 1: KELOMPOK KELAS GURU --}}
+@if(isset($kelasList) && $kelasList->isNotEmpty())
+    <div class="kelas-section">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 12px;">
+            🏫 Pilih Kelas Pembelajaran
+        </div>
+        <div class="kelas-grid-guru">
+            @foreach($kelasList as $k)
+                @php
+                    $isActive = ($idKelas === $k->id_kelas);
+                @endphp
+                <a href="{{ $isActive ? route('guru.nilai.index') : route('guru.nilai.index', ['kelas' => $k->id_kelas]) }}"
+                   class="kelas-card-guru {{ $isActive ? 'active' : '' }}">
+                    <div>
+                        <div class="kelas-card-header">
+                            <h3 class="kelas-card-title">{{ $k->nama_kelas }}</h3>
+                            <span class="badge {{ $isActive ? 'badge-primary' : 'badge-muted' }}">
+                                Tingkat {{ $k->tingkat }}
+                            </span>
+                        </div>
+                        <div class="kelas-stat-grid">
+                            <div class="kelas-stat-box">
+                                <span class="label">👥 Siswa</span>
+                                <span class="value">{{ $k->total_siswa }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📖 Materi</span>
+                                <span class="value">{{ $k->total_materi }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📝 Kuis Aktif</span>
+                                <span class="value">{{ $k->kuis_aktif }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📊 Rata Nilai</span>
+                                <span class="value" style="color: {{ $k->rata_nilai && $k->rata_nilai >= 75 ? '#166534' : '#92400e' }};">
+                                    {{ $k->rata_nilai !== null ? $k->rata_nilai : '-' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kelas-card-footer">
+                        <span>{{ $isActive ? '✓ Sedang Dilihat' : 'Buka Nilai Kelas' }}</span>
+                        <span>{{ $isActive ? '✕' : '→' }}</span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+@if($kelasTerpilih)
+    <div class="banner-kelas-active">
+        <div>
+            <strong style="color: var(--purple); font-size: 15px;">
+                📂 Menampilkan Data Nilai: Kelas {{ $kelasTerpilih->nama_kelas }}
+            </strong>
+            <span class="muted small" style="margin-left: 8px;">
+                ({{ $kelasTerpilih->total_siswa }} Siswa &bull; Rata-rata Nilai: {{ $kelasTerpilih->rata_nilai ?? '-' }})
+            </span>
+        </div>
+        <a href="{{ route('guru.nilai.index') }}" class="btn btn-secondary btn-small">
+            ✕ Tampilkan Semua Kelas
+        </a>
+    </div>
+@endif
 
 <!-- WHATSAPP-LIKE FILTER PILLS BAR -->
 <div class="filter-section">

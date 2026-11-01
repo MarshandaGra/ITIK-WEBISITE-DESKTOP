@@ -5,8 +5,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('guru.remedial.index') }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar remedial
+        <a href="{{ route('guru.remedial.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Buat Kuis Remedial</h1>
         <p>Siapkan kuis remedial untuk siswa yang nilainya di bawah KKM pada Ulangan.</p>

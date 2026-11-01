@@ -40,11 +40,11 @@ class TahunAjaran extends Model
 
     public function scopeAktif($query)
     {
-        return $query->where('is_aktif', 1);
+        return $query->where('is_aktif', true);
     }
 
     public static function aktif(): ?self
     {
-        return static::where('is_aktif', 1)->first();
+        return static::where('is_aktif', true)->first();
     }
 }

@@ -50,11 +50,11 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('kuis.soal.index', $kuis->id_kuis) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar soal
+        <a href="{{ route('kuis.soal.index', $kuis->id_kuis) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:6px;">
+            ← Kembali
         </a>
         <h1>Detail Butir Soal</h1>
-        <p>Kuis: <strong>{{ $kuis->judul }}</strong> &bull; ID Soal: {{ $soal->id_soal }}</p>
+        <p>Kuis: <strong>{{ $kuis->judul }}</strong></p>
     </div>
     <div style="display: flex; gap: 10px;">
         <a href="{{ route('kuis.soal.edit', [$kuis->id_kuis, $soal->id_soal]) }}" class="btn btn-primary">

@@ -102,15 +102,7 @@ class AuthController extends Controller
             return redirect()->route('password.wajib');
         }
 
-        if ($user->role === 'guru') {
-            return redirect()->route('dashboard');
-        }
-
-        if ($user->role === 'siswa') {
-            return redirect()->route('siswa.dashboard');
-        }
-
-        return redirect()->route('login');
+        return $this->redirectSesuaiRole($user);
     }
 
     public function adminLogin(Request $request)

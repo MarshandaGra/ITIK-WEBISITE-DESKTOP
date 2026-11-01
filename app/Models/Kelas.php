@@ -62,6 +62,6 @@ class Kelas extends Model
 
     public function scopeAktif($query)
     {
-        return $query->where('is_aktif', 1);
+        return $query->where('is_aktif', true);
     }
 }

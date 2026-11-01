@@ -5,8 +5,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('materi.index') }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar materi
+        <a href="{{ route('materi.index', ['mapel' => $materi->id_mapel]) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Edit Materi</h1>
         <p>Perbarui informasi dan dokumen materi pembelajaran.</p>

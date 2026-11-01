@@ -99,7 +99,7 @@
         <p>Detail hasil pengerjaan kuis siswa dan evaluasi butir soal.</p>
     </div>
     <a href="{{ route('guru.nilai.index') }}" class="btn btn-secondary">
-        ← Kembali ke Daftar Nilai
+        ← Kembali
     </a>
 </div>
 

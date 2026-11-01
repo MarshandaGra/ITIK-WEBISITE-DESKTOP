@@ -61,10 +61,6 @@
 
     <dl class="identity">
         <div>
-            <dt>ID Pengguna</dt>
-            <dd>{{ $pengguna?->id_user ?? '—' }}</dd>
-        </div>
-        <div>
             <dt>Nomor Induk (NISN / NIP)</dt>
             <dd>{{ $pengguna?->nomor_induk ?? '—' }}</dd>
         </div>
@@ -95,7 +91,7 @@
             🔑 Ganti Password
         </button>
         <a class="btn btn-secondary" href="{{ $pengguna?->role === 'siswa' ? route('siswa.dashboard') : route('dashboard') }}">
-            ← Kembali ke Dashboard
+            ← Kembali
         </a>
     </div>
 </section>

@@ -17,8 +17,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar kuis
+        <a href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:6px;">
+            ← Kembali
         </a>
         <h1>Edit Kuis</h1>
         <p>Perbarui informasi kuis, alokasi waktu, kriteria kelulusan, dan jadwal pelaksanaan.</p>
@@ -71,7 +71,7 @@
                         </option>
                     @endforeach
                 </select>
-                <p class="help">Mata pelajaran nonaktif yang sudah terhubung boleh dipertahankan.</p>
+                <p class="help">Diisi otomatis, tidak dapat diubah.</p>
                 @error('id_mapel') <div class="error">{{ $message }}</div> @enderror
             </div>
 
@@ -83,7 +83,7 @@
                     value="{{ $kuis->tahunAjaran?->nama ?? '-' }}"
                     readonly
                 >
-                <p class="help">Tahun ajaran kuis tetap dipertahankan agar riwayat rekap tidak berpindah.</p>
+                <p class="help">Tahun ajaran kuis dikunci sejak kuis dibuat.</p>
             </div>
         </div>
 
@@ -168,30 +168,32 @@
             </div>
         </div>
 
-        <!-- JADWAL ULANGAN -->
+        <!-- JADWAL TERBIT & DRAFT OTOMATIS -->
         <div id="waktu-container" class="special-card">
-            <label style="font-weight:700; display:block; margin-bottom:6px;">Jadwal Pelaksanaan Ulangan</label>
-            <p class="muted small" style="margin-bottom:12px;">Atur jadwal agar ulangan otomatis diterbitkan dan ditutup sesuai rentang waktu.</p>
+            <label style="font-weight:700; display:block; margin-bottom:6px;">📅 Jadwal Terbit &amp; Selesai Otomatis</label>
+            <p class="muted small" style="margin-bottom:12px;" id="waktu-keterangan">Tentukan tanggal dan jam untuk menerbitkan kuis secara otomatis, dan/atau mengembalikannya ke draft saat waktu berakhir. (Wajib untuk kategori Ulangan, opsional untuk kategori lainnya).</p>
             <div class="grid grid-2">
                 <div class="field">
-                    <label for="waktu_mulai">Waktu Mulai</label>
+                    <label for="waktu_mulai">Tanggal &amp; Waktu Terbit Otomatis</label>
                     <input
                         type="datetime-local"
                         id="waktu_mulai"
                         name="waktu_mulai"
                         value="{{ old('waktu_mulai', $kuis->waktu_mulai?->format('Y-m-d\TH:i')) }}"
                     >
+                    <p class="help">Kuis otomatis berstatus "Terbit" saat waktu ini tiba.</p>
                     @error('waktu_mulai') <div class="error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="field">
-                    <label for="waktu_selesai">Waktu Selesai</label>
+                    <label for="waktu_selesai">Tanggal &amp; Waktu Selesai (Otomatis Ditutup / Draft)</label>
                     <input
                         type="datetime-local"
                         id="waktu_selesai"
                         name="waktu_selesai"
                         value="{{ old('waktu_selesai', $kuis->waktu_selesai?->format('Y-m-d\TH:i')) }}"
                     >
+                    <p class="help">Kuis otomatis kembali ke "Draft" saat waktu ini lewat.</p>
                     @error('waktu_selesai') <div class="error">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -216,19 +218,22 @@
 
     function updateForm() {
         if (!kategori) return;
-        if (kategori.value === 'ulangan') {
-            if (materiContainer) materiContainer.style.display = 'block';
-            if (waktuContainer) waktuContainer.style.display = 'block';
-        } else if (
+        if (
+            kategori.value === 'ulangan' ||
             kategori.value === 'post-test' ||
             kategori.value === 'pre-test' ||
             kategori.value === 'kuis harian'
         ) {
             if (materiContainer) materiContainer.style.display = 'block';
-            if (waktuContainer) waktuContainer.style.display = 'none';
         } else {
             if (materiContainer) materiContainer.style.display = 'none';
-            if (waktuContainer) waktuContainer.style.display = 'none';
+        }
+
+        const ket = document.getElementById('waktu-keterangan');
+        if (ket) {
+            ket.textContent = kategori.value === 'ulangan'
+                ? 'Jadwal wajib diisi untuk kategori Ulangan.'
+                : 'Jadwal opsional: Tentukan tanggal dan jam untuk menerbitkan kuis secara otomatis.';
         }
     }
 

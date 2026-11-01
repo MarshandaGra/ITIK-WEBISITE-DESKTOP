@@ -14,11 +14,29 @@ class MateriController extends Controller
 {
     use MenghasilkanId;
 
-    public function index()
+    public function index(Request $request)
     {
-        $materi = Materi::latest()->get();
+        $idMapel = $request->query('mapel');
 
-        return view('materi.index', compact('materi'));
+        $mapelAktif = Mapel::aktif()
+            ->withCount('materi')
+            ->orderBy('nama_mapel')
+            ->get();
+
+        $mapelTerpilih = null;
+        $materi = collect();
+
+        if ($idMapel) {
+            $mapelTerpilih = Mapel::find($idMapel);
+            if ($mapelTerpilih) {
+                $materi = Materi::where('id_mapel', $idMapel)
+                    ->orderBy('bab')
+                    ->orderBy('judul')
+                    ->get();
+            }
+        }
+
+        return view('materi.index', compact('materi', 'mapelAktif', 'mapelTerpilih', 'idMapel'));
     }
 
     public function create()
@@ -148,6 +166,7 @@ class MateriController extends Controller
     public function destroy($id)
     {
         $materi = Materi::findOrFail($id);
+        $idMapel = $materi->id_mapel;
 
         if ($materi->isi_materi && Storage::disk('public')->exists($materi->isi_materi)) {
             Storage::disk('public')->delete($materi->isi_materi);

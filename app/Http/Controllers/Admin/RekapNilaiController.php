@@ -46,9 +46,10 @@ class RekapNilaiController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        $rekap = $daftarKelas->map(
-            fn (Kelas $kelas) => $this->rekapKelas($kelas, $kuisTerpilih, $idMapel, $idTahun)
-        );
+        $rekap = $daftarKelas->map(function ($kelas) use ($kuisTerpilih, $idMapel, $idTahun) {
+            /** @var \App\Models\Kelas $kelas */
+            return $this->rekapKelas($kelas, $kuisTerpilih, $idMapel, $idTahun);
+        });
 
         return view('admin.rekap.index', compact(
             'rekap',

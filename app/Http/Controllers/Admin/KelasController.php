@@ -117,9 +117,15 @@ class KelasController extends Controller
 
         $jumlahBaru = DB::transaction(function () use ($validated, $kelas) {
             $siswa = User::whereIn('id_user', $validated['id_user'])->orderBy('id_user')->lockForUpdate()->get();
-            $bentrok = $siswa->first(fn ($user) => $user->kelasDiikuti()
-                ->where('id_tahun_ajaran', $kelas->id_tahun_ajaran)
-                ->where('kelas.id_kelas', '!=', $kelas->id_kelas)->exists());
+            $bentrok = null;
+            foreach ($siswa as $u) {
+                if ($u->kelasDiikuti()
+                    ->where('id_tahun_ajaran', $kelas->id_tahun_ajaran)
+                    ->where('kelas.id_kelas', '!=', $kelas->id_kelas)->exists()) {
+                    $bentrok = $u;
+                    break;
+                }
+            }
 
             if ($bentrok) {
                 throw ValidationException::withMessages([

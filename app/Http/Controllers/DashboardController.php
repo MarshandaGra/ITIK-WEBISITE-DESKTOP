@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kuis;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        Kuis::sinkronisasiStatus();
+
         $jumlahSiswa = DB::table('user')
             ->where('role', 'siswa')
             ->count();

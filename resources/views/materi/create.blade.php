@@ -5,8 +5,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('materi.index') }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar materi
+        <a href="{{ request('mapel') ? route('materi.index', ['mapel' => request('mapel')]) : route('materi.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Tambah Materi</h1>
         <p>Lengkapi formulir di bawah ini untuk menambahkan materi pembelajaran baru.</p>
@@ -42,7 +42,7 @@
             <select id="id_mapel" name="id_mapel" required>
                 <option value="">-- Pilih Mata Pelajaran --</option>
                 @foreach ($mapel as $itemMapel)
-                    <option value="{{ $itemMapel->id_mapel }}" @selected(old('id_mapel') === $itemMapel->id_mapel)>
+                    <option value="{{ $itemMapel->id_mapel }}" @selected(old('id_mapel', request('mapel')) === $itemMapel->id_mapel)>
                         {{ $itemMapel->kode_mapel }} - {{ $itemMapel->nama_mapel }}
                     </option>
                 @endforeach

@@ -3,124 +3,252 @@
 
 @push('styles')
 <style>
-    .materi-grid {
+    /* === LEVEL 1: MAPEL CARDS === */
+    .mapel-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 20px;
     }
-    .materi-card {
+    .mapel-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 26px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 4px 20px #29263d04;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+    .mapel-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--purple);
+        box-shadow: 0 8px 30px rgba(85,66,220,.12);
+        text-decoration: none;
+    }
+    .mapel-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--purple-light);
+        color: var(--purple);
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+    }
+    .mapel-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 4px;
+    }
+    .mapel-code {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+    }
+    .mapel-count {
+        font-size: 13px;
+        color: var(--purple);
+        font-weight: 600;
+    }
+    .mapel-arrow {
+        font-size: 20px;
+        color: var(--muted);
+        margin-top: auto;
+        align-self: flex-end;
+    }
+
+    /* === LEVEL 2: MATERI ROWS (ALA FOTO 2) === */
+    .materi-list-foto2 {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .materi-row-foto2 {
         background: white;
         border: 1px solid var(--border);
         border-radius: 16px;
-        padding: 22px;
+        padding: 18px 22px;
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 4px 20px #29263d03;
-        transition: transform .2s ease, border-color .2s ease;
-    }
-    .materi-card:hover {
-        transform: translateY(-2px);
-        border-color: var(--purple);
-    }
-    .materi-header-row {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        justify-content: space-between;
+        gap: 18px;
+        box-shadow: 0 4px 20px #29263d03;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .15s ease;
     }
-    .materi-icon {
-        width: 42px;
-        height: 42px;
-        background: var(--purple-light);
-        color: var(--purple);
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        font-size: 20px;
+    .materi-row-foto2:hover {
+        border-color: var(--purple);
+        box-shadow: 0 6px 25px rgba(85,66,220,.08);
+        transform: translateY(-1px);
     }
-    .materi-card h3 {
-        font-size: 17px;
-        margin: 0 0 6px;
-        color: var(--ink);
+    .materi-main-info {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex: 1;
+        min-width: 0;
     }
-    .materi-bab {
-        font-size: 12px;
+    .materi-num-badge {
+        width: 48px;
+        height: 48px;
+        background: #181528;
+        color: white;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 800;
+        flex-shrink: 0;
+        letter-spacing: .5px;
+    }
+    .materi-text-wrap {
+        flex: 1;
+        min-width: 0;
+    }
+    .materi-row-title {
+        font-size: 16px;
         font-weight: 700;
-        color: var(--purple);
-        margin-bottom: 10px;
+        color: var(--ink);
+        margin: 0 0 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .materi-desc {
+    .materi-row-subtitle {
         font-size: 13px;
         color: var(--muted);
-        line-height: 1.5;
-        margin-bottom: 16px;
-        flex-grow: 1;
+        margin: 0;
+        line-height: 1.4;
     }
-    .materi-footer {
+    .materi-actions {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding-top: 14px;
-        border-top: 1px solid var(--border);
-        flex-wrap: wrap;
         gap: 8px;
+        flex-shrink: 0;
+    }
+
+    /* BREADCRUMB */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .breadcrumb a {
+        color: var(--purple);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .breadcrumb .sep {
+        color: var(--muted);
+    }
+    .breadcrumb .current {
+        color: var(--ink);
+        font-weight: 700;
     }
 </style>
 @endpush
 
 @section('content')
 
-<div class="page-heading">
-    <div>
-        <h1>Materi</h1>
-        <p>Kelola materi pembelajaran TIK dan pantau kesiapan bahan ajar.</p>
-    </div>
-    <a href="{{ route('materi.create') }}" class="btn">
-        + Tambah Materi
-    </a>
-</div>
-
-{{-- SEARCH TOOLBAR --}}
-<div class="card" style="padding: 14px 18px; margin-bottom: 22px;">
-    <div class="filter-form" style="align-items: center;">
-        <div class="field field-search" style="margin-bottom: 0;">
-            <input
-                type="search"
-                id="searchMateri"
-                placeholder="Cari materi berdasarkan judul, bab, atau kelas..."
-                autocomplete="off"
-            >
+@if(!$mapelTerpilih)
+    {{-- ============================================================ --}}
+    {{-- LEVEL 1: PILIH MATA PELAJARAN --}}
+    {{-- ============================================================ --}}
+    <div class="page-heading">
+        <div>
+            <h1>Materi Pembelajaran</h1>
+            <p>Pilih mata pelajaran untuk melihat dan mengelola materi pembelajaran siswa.</p>
         </div>
-        <span class="muted small" id="countMateri">
-            {{ $materi->count() }} materi tersedia
-        </span>
     </div>
-</div>
 
-@if($materi->count() > 0)
-    <div class="materi-grid" id="materiGrid">
-        @foreach($materi as $item)
-            <div class="materi-card" data-search="{{ strtolower($item->judul . ' ' . $item->bab . ' ' . $item->kelas) }}">
-                <div>
-                    <div class="materi-header-row">
-                        <div class="materi-icon">▣</div>
-                        <span class="badge badge-muted">Kelas {{ $item->kelas ?? '-' }}</span>
+    @if($mapelAktif->isEmpty())
+        <div class="empty">
+            <h3>Belum Ada Mata Pelajaran Aktif</h3>
+            <p>Hubungi admin untuk menambahkan mata pelajaran pembelajaran.</p>
+        </div>
+    @else
+        <div class="mapel-grid">
+            @foreach($mapelAktif as $mp)
+                <a href="{{ route('materi.index', ['mapel' => $mp->id_mapel]) }}" class="mapel-card">
+                    <div class="mapel-icon">📚</div>
+                    <div>
+                        <div class="mapel-code">{{ $mp->kode_mapel }}</div>
+                        <h3 class="mapel-title">{{ $mp->nama_mapel }}</h3>
+                        <div class="mapel-count">{{ $mp->materi_count ?? 0 }} Materi Pembelajaran</div>
+                    </div>
+                    <div class="mapel-arrow">→</div>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+@else
+    {{-- ============================================================ --}}
+    {{-- LEVEL 2: DAFTAR MATERI PER MATA PELAJARAN (ALA FOTO 2) --}}
+    {{-- ============================================================ --}}
+    <div class="breadcrumb">
+        <a href="{{ route('materi.index') }}">Materi</a>
+        <span class="sep">›</span>
+        <span class="current">{{ $mapelTerpilih->nama_mapel }}</span>
+    </div>
+
+    <div class="page-heading">
+        <div>
+            <a href="{{ route('materi.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom: 10px;">
+                ← Kembali
+            </a>
+            <h1>{{ $mapelTerpilih->nama_mapel }}</h1>
+            <p>{{ $materi->count() }} materi pembelajaran tersedia untuk mata pelajaran ini.</p>
+        </div>
+        <a href="{{ route('materi.create', ['mapel' => $mapelTerpilih->id_mapel]) }}" class="btn">
+            + Tambah Materi
+        </a>
+    </div>
+
+    @if($materi->isEmpty())
+        <div class="empty">
+            <h3>Belum Ada Materi untuk Mata Pelajaran Ini</h3>
+            <p>Silakan tambahkan materi pembelajaran pertama untuk siswa.</p>
+            <a href="{{ route('materi.create', ['mapel' => $mapelTerpilih->id_mapel]) }}" class="btn" style="margin-top: 14px;">
+                + Tambah Materi Pertama
+            </a>
+        </div>
+    @else
+        <div class="materi-list-foto2">
+            @foreach($materi as $idx => $item)
+                <div class="materi-row-foto2">
+                    <div class="materi-main-info">
+                        <div class="materi-num-badge">
+                            {{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
+                        </div>
+                        <div class="materi-text-wrap">
+                            <h3 class="materi-row-title">{{ $item->judul }}</h3>
+                            <p class="materi-row-subtitle">
+                                @if($item->bab)
+                                    <strong>{{ $item->bab }}</strong> &bull;
+                                @endif
+                                Kelas {{ $item->kelas ?? '-' }}
+                                @if($item->deskripsi)
+                                    &bull; {{ Str::limit($item->deskripsi, 90) }}
+                                @endif
+                            </p>
+                        </div>
                     </div>
 
-                    <h3>{{ $item->judul }}</h3>
-                    <div class="materi-bab">{{ $item->bab ?? 'Materi Pembelajaran' }}</div>
-
-                    <div class="materi-desc">
-                        {{ $item->deskripsi ? Str::limit($item->deskripsi, 110) : 'Tidak ada deskripsi materi.' }}
-                    </div>
-                </div>
-
-                <div class="materi-footer">
-                    <span class="muted small">ID: {{ $item->id_materi }}</span>
-                    <div class="actions">
+                    <div class="materi-actions">
                         <a href="{{ route('materi.show', $item->id_materi) }}" class="btn btn-secondary btn-small">
-                            Lihat
+                            Lihat Dokumen
                         </a>
                         <a href="{{ route('materi.edit', $item->id_materi) }}" class="btn btn-secondary btn-small">
                             Edit
@@ -139,45 +267,10 @@
                         </form>
                     </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
-@else
-    <div class="empty">
-        <h3>Belum ada materi</h3>
-        <p>Silakan tambahkan materi pembelajaran pertama untuk siswa.</p>
-        <a href="{{ route('materi.create') }}" class="btn" style="margin-top: 14px;">
-            + Tambah Materi Pertama
-        </a>
-    </div>
+            @endforeach
+        </div>
+    @endif
+
 @endif
-
-@push('scripts')
-<script>
-    const searchInput = document.getElementById('searchMateri');
-    if (searchInput) {
-        searchInput.addEventListener('input', function () {
-            const keyword = this.value.toLowerCase().trim();
-            const cards = document.querySelectorAll('.materi-card');
-            let visible = 0;
-
-            cards.forEach(card => {
-                const searchData = card.getAttribute('data-search') || '';
-                if (!keyword || searchData.includes(keyword)) {
-                    card.style.display = '';
-                    visible++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            const countEl = document.getElementById('countMateri');
-            if (countEl) {
-                countEl.textContent = visible + ' materi ditampilkan';
-            }
-        });
-    }
-</script>
-@endpush
 
 @endsection

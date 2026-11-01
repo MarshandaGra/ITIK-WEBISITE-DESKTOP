@@ -18,6 +18,8 @@ class SiswaDashboardController extends Controller
 
     public function index()
     {
+        Kuis::sinkronisasiStatus();
+
         $user = Auth::user();
 
         // Tutup sesi kedaluwarsa supaya nilai hasil auto-submit langsung muncul di dashboard.

@@ -118,8 +118,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('siswa.kuis.index') }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar kuis
+        <a href="{{ route('siswa.kuis.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Hasil Kuis</h1>
         <p>{{ $kuis->judul }}</p>

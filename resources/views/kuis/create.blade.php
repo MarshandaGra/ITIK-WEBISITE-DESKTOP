@@ -17,8 +17,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('kuis.index', $mapelTerpilih ? ['mapel' => $mapelTerpilih] : []) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar kuis
+        <a href="{{ route('kuis.index', $mapelTerpilih ? ['mapel' => $mapelTerpilih] : []) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:6px;">
+            ← Kembali
         </a>
         <h1>Tambah Kuis Baru</h1>
         <p>Atur parameter penilaian, tingkat kesulitan, alokasi waktu, dan jadwal kuis.</p>
@@ -165,28 +165,33 @@
             </div>
         </div>
 
-        {{-- JADWAL ULANGAN --}}
-        <div id="waktu-container" class="special-card" style="display: none;">
-            <h3 style="font-size: 15px; margin-bottom: 12px;">📅 Jadwal Akses Ulangan (Otomatis Terbit &amp; Ditutup)</h3>
+        {{-- JADWAL TERBIT & DRAFT OTOMATIS --}}
+        <div id="waktu-container" class="special-card">
+            <h3 style="font-size: 15px; margin-bottom: 6px;">📅 Jadwal Terbit &amp; Selesai Otomatis</h3>
+            <p class="muted small" style="margin-bottom: 12px;" id="waktu-keterangan">
+                Tentukan tanggal dan jam untuk menerbitkan kuis secara otomatis, dan/atau mengembalikannya ke draft saat waktu berakhir. (Wajib untuk kategori Ulangan, opsional untuk kategori lainnya).
+            </p>
             <div class="grid grid-2">
                 <div class="field" style="margin-bottom: 0;">
-                    <label for="waktu_mulai">Waktu Mulai (Otomatis Terbit)</label>
+                    <label for="waktu_mulai">Tanggal &amp; Waktu Terbit Otomatis</label>
                     <input
                         type="datetime-local"
                         id="waktu_mulai"
                         name="waktu_mulai"
                         value="{{ old('waktu_mulai') }}"
                     >
+                    <p class="help">Kuis otomatis berstatus "Terbit" saat waktu ini tiba.</p>
                     @error('waktu_mulai') <div class="error">{{ $message }}</div> @enderror
                 </div>
                 <div class="field" style="margin-bottom: 0;">
-                    <label for="waktu_selesai">Waktu Selesai (Otomatis Ditutup / Draft)</label>
+                    <label for="waktu_selesai">Tanggal &amp; Waktu Selesai (Otomatis Ditutup / Draft)</label>
                     <input
                         type="datetime-local"
                         id="waktu_selesai"
                         name="waktu_selesai"
                         value="{{ old('waktu_selesai') }}"
                     >
+                    <p class="help">Kuis otomatis kembali ke "Draft" saat waktu ini lewat.</p>
                     @error('waktu_selesai') <div class="error">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -229,16 +234,19 @@
     function updateForm() {
         const value = kategori.value;
         materiContainer.style.display = 'none';
-        waktuContainer.style.display = 'none';
         remedialContainer.style.display = 'none';
 
-        if (value === 'post-test' || value === 'pre-test' || value === 'kuis harian') {
+        if (value === 'post-test' || value === 'pre-test' || value === 'kuis harian' || value === 'ulangan') {
             materiContainer.style.display = 'block';
-        } else if (value === 'ulangan') {
-            materiContainer.style.display = 'block';
-            waktuContainer.style.display = 'block';
         } else if (value === 'remedial') {
             remedialContainer.style.display = 'block';
+        }
+
+        const ket = document.getElementById('waktu-keterangan');
+        if (ket) {
+            ket.textContent = value === 'ulangan'
+                ? 'Jadwal wajib diisi untuk kategori Ulangan.'
+                : 'Jadwal opsional: Tentukan tanggal dan jam untuk menerbitkan kuis secara otomatis.';
         }
     }
 

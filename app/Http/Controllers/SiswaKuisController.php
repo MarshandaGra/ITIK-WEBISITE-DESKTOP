@@ -13,7 +13,6 @@ use App\Models\Mengerjakan;
 use App\Models\RemedialSiswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class SiswaKuisController extends Controller
 {
@@ -23,16 +22,16 @@ class SiswaKuisController extends Controller
 
     public function index(Request $request)
     {
+        Kuis::sinkronisasiStatus();
+
         $user = Auth::user();
 
-        // Tutup sesi yang sudah kedaluwarsa milik siswa ini,
-        // supaya nilai otomatis muncul saat halaman dibuka.
         $this->submission->selesaikanMilikSiswa($user->id_user);
 
         $idMapel = $request->query('mapel');
         $idMateri = $request->query('materi');
 
-        $mapelAktif = Mapel::where('is_aktif', 1)
+        $mapelAktif = Mapel::aktif()
             ->withCount(['kuis' => function ($q) {
                 $q->where('status_publikasi', 'terbit')
                   ->where('is_aktif', true);
@@ -87,7 +86,7 @@ class SiswaKuisController extends Controller
 
         $kuis = $kuisQuery->get();
 
-        $kuis = $kuis->filter(function (Kuis $item) use ($user) {
+        $kuis = $kuis->filter(function ($item) use ($user) {
             if (strtolower(trim($item->kategori)) !== 'remedial') {
                 return true;
             }
@@ -103,73 +102,7 @@ class SiswaKuisController extends Controller
                 ->exists();
         })->values();
 
-        // Riwayat nilai siswa untuk menentukan progresi level Kuis Harian
-        $nilaiSiswa = Mengerjakan::where('id_user', $user->id_user)
-            ->where('status_pengerjaan', 'final')
-            ->get()
-            ->groupBy('id_kuis');
-
-        // Pengecekan kelulusan kuis harian per materi & per mapel
-        $lulusMudahPerMateri = [];
-        $lulusSedangPerMateri = [];
-        $lulusMudahPerMapel = [];
-        $lulusSedangPerMapel = [];
-
-        $statusKuis = [];
-        foreach ($kuis as $item) {
-            $riwayat = $nilaiSiswa->get($item->id_kuis);
-            $nilaiTertinggi = $riwayat ? $riwayat->max('nilai') : null;
-            $sudahLulus = $nilaiTertinggi !== null && $item->kkm !== null && $nilaiTertinggi >= $item->kkm;
-
-            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
-            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
-
-            if ($isKuisHarian && $sudahLulus) {
-                if ($tingkat === 'mudah') {
-                    $lulusMudahPerMapel[$item->id_mapel] = true;
-                    foreach ($item->materi as $m) {
-                        $lulusMudahPerMateri[$m->id_materi] = true;
-                    }
-                } elseif ($tingkat === 'sedang') {
-                    $lulusSedangPerMapel[$item->id_mapel] = true;
-                    foreach ($item->materi as $m) {
-                        $lulusSedangPerMateri[$m->id_materi] = true;
-                    }
-                }
-            }
-
-            $statusKuis[$item->id_kuis] = [
-                'nilai_tertinggi' => $nilaiTertinggi,
-                'sudah_pernah' => $riwayat && $riwayat->isNotEmpty(),
-                'lulus' => $sudahLulus,
-                'terkunci' => false,
-                'alasan_kunci' => null,
-            ];
-        }
-
-        // Terapkan aturan progresi Kuis Harian (mudah -> sedang -> sulit)
-        foreach ($kuis as $item) {
-            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
-            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
-
-            if ($isKuisHarian) {
-                $idMat = $item->materi->first()?->id_materi;
-
-                if ($tingkat === 'sedang') {
-                    $lulus = $idMat ? !empty($lulusMudahPerMateri[$idMat]) : !empty($lulusMudahPerMapel[$item->id_mapel]);
-                    if (!$lulus) {
-                        $statusKuis[$item->id_kuis]['terkunci'] = true;
-                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Mudah dengan nilai >= KKM terlebih dahulu.';
-                    }
-                } elseif ($tingkat === 'sulit') {
-                    $lulus = $idMat ? !empty($lulusSedangPerMateri[$idMat]) : !empty($lulusSedangPerMapel[$item->id_mapel]);
-                    if (!$lulus) {
-                        $statusKuis[$item->id_kuis]['terkunci'] = true;
-                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Sedang dengan nilai >= KKM terlebih dahulu.';
-                    }
-                }
-            }
-        }
+        $statusKuis = $this->hitungStatusDanProgresiKuis($kuis, $user->id_user);
 
         return view('siswa.kuis.index', compact(
             'kuis',
@@ -678,7 +611,7 @@ class SiswaKuisController extends Controller
         $idMapel = $request->query('mapel');
         $idMateri = $request->query('materi');
 
-        $mapelAktif = Mapel::where('is_aktif', 1)
+        $mapelAktif = Mapel::aktif()
             ->withCount(['kuis' => function ($q) {
                 $q->where('status_publikasi', 'terbit')
                   ->where('is_aktif', true);
@@ -777,5 +710,76 @@ class SiswaKuisController extends Controller
             'semuaHasil'
         ));
     }
-}
+    /**
+     * Hitung status riwayat pengerjaan dan progresi KKM kuis harian.
+     */
+    private function hitungStatusDanProgresiKuis($kuis, string $idUser): array
+    {
+        $nilaiSiswa = Mengerjakan::where('id_user', $idUser)
+            ->where('status_pengerjaan', 'final')
+            ->get()
+            ->groupBy('id_kuis');
 
+        $lulusMudahPerMateri = [];
+        $lulusSedangPerMateri = [];
+        $lulusMudahPerMapel = [];
+        $lulusSedangPerMapel = [];
+
+        $statusKuis = [];
+        foreach ($kuis as $item) {
+            $riwayat = $nilaiSiswa->get($item->id_kuis);
+            $nilaiTertinggi = $riwayat ? $riwayat->max('nilai') : null;
+            $sudahLulus = $nilaiTertinggi !== null && $item->kkm !== null && $nilaiTertinggi >= $item->kkm;
+
+            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
+            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
+
+            if ($isKuisHarian && $sudahLulus) {
+                if ($tingkat === 'mudah') {
+                    $lulusMudahPerMapel[$item->id_mapel] = true;
+                    foreach ($item->materi as $m) {
+                        $lulusMudahPerMateri[$m->id_materi] = true;
+                    }
+                } elseif ($tingkat === 'sedang') {
+                    $lulusSedangPerMapel[$item->id_mapel] = true;
+                    foreach ($item->materi as $m) {
+                        $lulusSedangPerMateri[$m->id_materi] = true;
+                    }
+                }
+            }
+
+            $statusKuis[$item->id_kuis] = [
+                'nilai_tertinggi' => $nilaiTertinggi,
+                'sudah_pernah' => $riwayat && $riwayat->isNotEmpty(),
+                'lulus' => $sudahLulus,
+                'terkunci' => false,
+                'alasan_kunci' => null,
+            ];
+        }
+
+        foreach ($kuis as $item) {
+            $isKuisHarian = strtolower(trim($item->kategori)) === 'kuis harian';
+            $tingkat = strtolower(trim($item->tingkat_kesulitan ?? 'mudah'));
+
+            if ($isKuisHarian) {
+                $idMat = $item->materi->first()?->id_materi;
+
+                if ($tingkat === 'sedang') {
+                    $lulus = $idMat ? !empty($lulusMudahPerMateri[$idMat]) : !empty($lulusMudahPerMapel[$item->id_mapel]);
+                    if (!$lulus) {
+                        $statusKuis[$item->id_kuis]['terkunci'] = true;
+                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Mudah dengan nilai >= KKM terlebih dahulu.';
+                    }
+                } elseif ($tingkat === 'sulit') {
+                    $lulus = $idMat ? !empty($lulusSedangPerMateri[$idMat]) : !empty($lulusSedangPerMapel[$item->id_mapel]);
+                    if (!$lulus) {
+                        $statusKuis[$item->id_kuis]['terkunci'] = true;
+                        $statusKuis[$item->id_kuis]['alasan_kunci'] = 'Selesaikan kuis harian tingkat Sedang dengan nilai >= KKM terlebih dahulu.';
+                    }
+                }
+            }
+        }
+
+        return $statusKuis;
+    }
+}

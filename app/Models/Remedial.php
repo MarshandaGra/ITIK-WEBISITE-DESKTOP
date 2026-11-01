@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Kuis;
-use App\Models\RemedialSiswa;
 use Illuminate\Database\Eloquent\Model;
 
 class Remedial extends Model

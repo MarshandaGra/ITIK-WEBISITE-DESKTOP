@@ -368,4 +368,22 @@ class NilaiGuruDanSiswaTest extends TestCase
         $resL3->assertOk();
         $resL3->assertSee('Hasil Kuis — ' . $this->materi->judul);
     }
+
+    public function test_siswa_materi_tampil_berbasis_mapel_lalu_materi(): void
+    {
+        $this->actingAs($this->siswa);
+
+        // 1. Level 1: Pilih Mapel
+        $resL1 = $this->get(route('siswa.materi.index'));
+        $resL1->assertOk();
+        $resL1->assertSee('Materi Pembelajaran');
+        $resL1->assertSee($this->mapel->nama_mapel);
+
+        // 2. Level 2: Daftar Materi per Mapel
+        $resL2 = $this->get(route('siswa.materi.index', ['mapel' => $this->mapel->id_mapel]));
+        $resL2->assertOk();
+        $resL2->assertSee($this->mapel->nama_mapel);
+        $resL2->assertSee($this->materi->judul);
+        $resL2->assertSee('materi-num-badge');
+    }
 }

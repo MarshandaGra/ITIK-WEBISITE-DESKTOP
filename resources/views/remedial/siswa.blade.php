@@ -35,8 +35,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('guru.remedial.index') }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar remedial
+        <a href="{{ route('guru.remedial.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>Tugaskan Siswa Remedial</h1>
         <p>Pilih siswa yang berhak mengikuti kuis remedial ini berdasarkan nilai ulangan asal.</p>

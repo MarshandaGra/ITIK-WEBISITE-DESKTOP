@@ -58,8 +58,8 @@
 
 <div class="page-heading">
     <div>
-        <a href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
-            ← Kembali ke daftar kuis
+        <a href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
         </a>
         <h1>{{ $kuis->judul }}</h1>
         <p>Detail kuis, jadwal, daftar butir soal, dan publikasi.</p>
@@ -141,7 +141,7 @@
     <div class="meta-box">
         <div class="meta-item">
             <div class="meta-label">Mata Pelajaran</div>
-            <div class="meta-val">{{ $kuis->mapel?->nama_mapel ?? '-' }} <span class="muted small">({{ $kuis->id_mapel }})</span></div>
+            <div class="meta-val">{{ $kuis->mapel?->nama_mapel ?? '-' }}</div>
         </div>
         <div class="meta-item">
             <div class="meta-label">Kategori</div>

@@ -6,12 +6,14 @@ use App\Models\Kuis;
 use App\Models\Remedial;
 use App\Models\RemedialSiswa;
 use App\Models\Mengerjakan;
+use App\Support\MenghasilkanId;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class RemedialController extends Controller
 {
+    use MenghasilkanId;
     /**
      * Menampilkan daftar kuis remedial.
      */
@@ -121,7 +123,7 @@ class RemedialController extends Controller
         /*
          * Buat ID kuis.
          */
-        $idKuis = $this->generateKuisId();
+        $idKuis = $this->idBerikutnya('kuis', 'id_kuis', 'K');
 
         DB::transaction(function () use (
             $validated,
@@ -218,31 +220,6 @@ class RemedialController extends Controller
         });
 
         return view('remedial.show', compact('remedial'));
-    }
-
-    /**
-     * Generate ID Kuis berikutnya.
-     *
-     * Contoh:
-     * K001
-     * K002
-     * K003
-     */
-    private function generateKuisId(): string
-    {
-        $nomor = Kuis::query()
-            ->pluck('id_kuis')
-            ->map(function (string $idKuis): int {
-                return (int) preg_replace('/^K/', '', $idKuis);
-            })
-            ->max() ?? 0;
-
-        return 'K' . str_pad(
-            $nomor + 1,
-            3,
-            '0',
-            STR_PAD_LEFT
-        );
     }
 
     /**

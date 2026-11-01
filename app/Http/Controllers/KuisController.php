@@ -40,9 +40,11 @@ class KuisController extends Controller
 
     public function index(Request $request)
     {
+        Kuis::sinkronisasiStatus();
+
         $idMapel = $request->query('mapel');
 
-        $mapelAktif = Mapel::where('is_aktif', 1)
+        $mapelAktif = Mapel::aktif()
             ->withCount(['kuis' => function ($q) {
                 $q->where('is_aktif', true);
             }])
@@ -179,19 +181,20 @@ class KuisController extends Controller
             $validated['waktu_mulai'] = $request->waktu_mulai;
             $validated['waktu_selesai'] = $request->waktu_selesai;
 
-        } elseif (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+        } elseif (!empty($request->waktu_mulai) || !empty($request->waktu_selesai)) {
+            if (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+                $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+                $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
 
-            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
-            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
-
-            if ($waktuSelesai->lte($waktuMulai)) {
-                throw ValidationException::withMessages([
-                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
-                ]);
+                if ($waktuSelesai->lte($waktuMulai)) {
+                    throw ValidationException::withMessages([
+                        'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                    ]);
+                }
             }
 
-            $validated['waktu_mulai'] = $request->waktu_mulai;
-            $validated['waktu_selesai'] = $request->waktu_selesai;
+            $validated['waktu_mulai'] = $request->waktu_mulai ?: null;
+            $validated['waktu_selesai'] = $request->waktu_selesai ?: null;
 
         } else {
             $validated['waktu_mulai'] = null;
@@ -253,6 +256,8 @@ class KuisController extends Controller
 
     public function show($id)
     {
+        Kuis::sinkronisasiStatus();
+
         $kuis = Kuis::with([
             'pembuat',
             'materi',
@@ -350,19 +355,20 @@ class KuisController extends Controller
             $validated['waktu_mulai'] = $request->waktu_mulai;
             $validated['waktu_selesai'] = $request->waktu_selesai;
 
-        } elseif (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+        } elseif (!empty($request->waktu_mulai) || !empty($request->waktu_selesai)) {
+            if (!empty($request->waktu_mulai) && !empty($request->waktu_selesai)) {
+                $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
+                $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
 
-            $waktuMulai = \Carbon\Carbon::parse($request->waktu_mulai);
-            $waktuSelesai = \Carbon\Carbon::parse($request->waktu_selesai);
-
-            if ($waktuSelesai->lte($waktuMulai)) {
-                throw ValidationException::withMessages([
-                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
-                ]);
+                if ($waktuSelesai->lte($waktuMulai)) {
+                    throw ValidationException::withMessages([
+                        'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                    ]);
+                }
             }
 
-            $validated['waktu_mulai'] = $request->waktu_mulai;
-            $validated['waktu_selesai'] = $request->waktu_selesai;
+            $validated['waktu_mulai'] = $request->waktu_mulai ?: null;
+            $validated['waktu_selesai'] = $request->waktu_selesai ?: null;
 
         } else {
             $validated['waktu_mulai'] = null;

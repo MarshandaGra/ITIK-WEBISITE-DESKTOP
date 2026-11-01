@@ -96,4 +96,37 @@ class Kuis extends Model
     {
         return $this->hasMany(RemedialSiswa::class,'id_kuis_remedial','id_kuis');
     }
+
+    /**
+     * Sinkronisasi status publikasi kuis secara otomatis:
+     * - Terbit otomatis jika waktu_mulai sudah tiba (<= now)
+     * - Kembali ke draft otomatis jika waktu_selesai sudah lewat (<= now)
+     */
+    public static function sinkronisasiStatus(?\Carbon\Carbon $now = null): void
+    {
+        $now = $now ?? \Carbon\Carbon::now();
+
+        // 1. Auto terbit: draft, waktu_mulai <= now, dan (waktu_selesai is null atau waktu_selesai > now)
+        static::where('status_publikasi', 'draft')
+            ->whereNotNull('waktu_mulai')
+            ->where('waktu_mulai', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('waktu_selesai')
+                  ->orWhere('waktu_selesai', '>', $now);
+            })
+            ->where('is_aktif', true)
+            ->update([
+                'status_publikasi' => 'terbit',
+            ]);
+
+        // 2. Auto draft: terbit, waktu_selesai <= now
+        static::where('status_publikasi', 'terbit')
+            ->whereNotNull('waktu_selesai')
+            ->where('waktu_selesai', '<=', $now)
+            ->where('is_aktif', true)
+            ->update([
+                'status_publikasi' => 'draft',
+                'id_publisher'     => null,
+            ]);
+    }
 }

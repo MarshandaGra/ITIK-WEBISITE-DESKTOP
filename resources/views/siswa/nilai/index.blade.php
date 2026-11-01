@@ -260,7 +260,7 @@
                 <p class="muted">Klik bab materi di bawah untuk melihat rincian riwayat kuis dan evaluasi butir soal</p>
             </div>
             <a href="{{ url('/siswa/nilai') }}" class="btn btn-secondary btn-small">
-                ← Pilih Mapel Lain
+                ← Kembali
             </a>
         </div>
 
@@ -376,7 +376,7 @@
                 <p class="muted">Daftar riwayat pengerjaan dan hasil evaluasi butir kuis pada bab ini</p>
             </div>
             <a href="{{ url('/siswa/nilai?mapel=' . $mapelTerpilih->id_mapel) }}" class="btn btn-secondary btn-small">
-                ← Kembali ke Daftar Bab
+                ← Kembali
             </a>
         </div>
 

@@ -327,11 +327,11 @@
 
         @if ($materiTerpilih)
             <a href="{{ url('/siswa/kuis?mapel=' . $mapelTerpilih->id_mapel) }}" class="btn-back-mapel">
-                ← Kembali ke Daftar Bab
+                ← Kembali
             </a>
         @else
             <a href="{{ url('/siswa/kuis') }}" class="btn-back-mapel">
-                ← Ganti Mata Pelajaran
+                ← Kembali
             </a>
         @endif
     </div>

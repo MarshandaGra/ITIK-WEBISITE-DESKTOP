@@ -15,3 +15,7 @@ Artisan::command('kuis:selesaikan-kedaluwarsa', function (KuisSubmissionService 
 
 Schedule::command('kuis:selesaikan-kedaluwarsa')
     ->everyMinute()->withoutOverlapping();
+
+// Auto-terbitkan kuis saat waktu_mulai tiba & kembalikan ke draft saat waktu_selesai lewat.
+Schedule::command('kuis:auto-publish')
+    ->everyMinute()->withoutOverlapping();

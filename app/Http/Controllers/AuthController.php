@@ -103,7 +103,7 @@ class AuthController extends Controller
         }
 
         if ($user->role === 'guru') {
-            return redirect()->route('materi.index');
+            return redirect()->route('dashboard');
         }
 
         if ($user->role === 'siswa') {
@@ -163,7 +163,7 @@ class AuthController extends Controller
         }
 
         if ($user->role === 'guru') {
-            return redirect()->route('materi.index');
+            return redirect()->route('dashboard');
         }
 
         if ($user->role === 'siswa') {

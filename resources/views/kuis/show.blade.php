@@ -1,1118 +1,256 @@
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Detail Kuis - ITIK</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background: #f5f4fc;
-            color: #202044;
-        }
-
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* ================= SIDEBAR ================= */
-
-        .sidebar {
-            width: 270px;
-            background: linear-gradient(180deg, #7160ef, #5948dd);
-            color: white;
-            padding: 30px 25px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 60px;
-        }
-
-        .logo-icon {
-            width: 55px;
-            height: 55px;
-            border: 1px solid rgba(255,255,255,.4);
-            border-radius: 16px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .logo h2 {
-            font-size: 22px;
-        }
-
-        .logo span {
-            font-size: 14px;
-            opacity: .85;
-        }
-
-        .menu-title {
-            font-size: 14px;
-            opacity: .7;
-            margin-bottom: 15px;
-        }
-
-        .menu a {
-            display: block;
-            text-decoration: none;
-            color: white;
-
-            padding: 15px 18px;
-            border-radius: 15px;
-            margin-bottom: 8px;
-
-            font-size: 17px;
-        }
-
-        .menu a.active {
-            background: white;
-            color: #5b4ae3;
-        }
-
-        .menu a:hover {
-            background: rgba(255,255,255,.15);
-        }
-
-        /* ================= CONTENT ================= */
-
-        .content {
-            flex: 1;
-            padding: 30px 45px;
-            min-width: 0;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 35px;
-        }
-
-        .title h1 {
-            font-size: 34px;
-            margin-bottom: 5px;
-        }
-
-        .title p {
-            color: #777394;
-            font-size: 17px;
-        }
-
-        .profile-mini {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-
-            background: white;
-            padding: 10px 18px;
-            border-radius: 40px;
-
-            box-shadow: 0 3px 15px rgba(0,0,0,.04);
-        }
-
-        .avatar-small {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-
-            background: #6553e8;
-            color: white;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-weight: bold;
-        }
-
-        .profile-mini small {
-            color: #777394;
-        }
-
-        /* ================= PAGE HEADER ================= */
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-
-            margin-bottom: 25px;
-        }
-
-        .page-header h2 {
-            font-size: 28px;
-            margin-bottom: 6px;
-        }
-
-        .page-header p {
-            color: #777394;
-            font-size: 15px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        /* ================= BUTTON ================= */
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 12px 18px;
-            border-radius: 12px;
-
-            text-decoration: none;
-            border: none;
-
-            font-size: 14px;
-            font-weight: bold;
-
-            cursor: pointer;
-            transition: .2s;
-        }
-
-        .btn-primary {
-            background: #6553e8;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5543d5;
-        }
-
-        .btn-secondary {
-            background: #eeeaff;
-            color: #5b4ae3;
-        }
-
-        .btn-secondary:hover {
-            background: #e2ddff;
-        }
-
-        .btn-success {
-            background: #20a464;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #178a53;
-        }
-
-        /* ================= ERROR ================= */
-
-        .alert-danger {
-            background: #fff0f0;
-            border: 1px solid #ffd0d0;
-
-            color: #d64545;
-
-            padding: 16px 18px;
-            border-radius: 13px;
-
-            margin-bottom: 25px;
-        }
-
-        .alert-danger strong {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .alert-danger ul {
-            padding-left: 20px;
-        }
-
-        .alert-danger li {
-            margin-bottom: 4px;
-        }
-
-        /* ================= INFO CARD ================= */
-
-        .info-card {
-            background: white;
-            border-radius: 22px;
-
-            padding: 28px;
-
-            box-shadow: 0 4px 18px rgba(70,60,130,.06);
-
-            margin-bottom: 22px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px 35px;
-        }
-
-        .info-item {
-            padding-bottom: 17px;
-            border-bottom: 1px solid #f0eff6;
-        }
-
-        .info-item.full {
-            grid-column: 1 / -1;
-        }
-
-        .info-label {
-            color: #8b88a0;
-            font-size: 13px;
-
-            margin-bottom: 6px;
-        }
-
-        .info-value {
-            color: #202044;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .info-value strong {
-            font-size: 16px;
-        }
-
-        /* ================= STATUS ================= */
-
-        .status {
-            display: inline-flex;
-            align-items: center;
-
-            padding: 6px 12px;
-            border-radius: 20px;
-
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-draft {
-            background: #fff4d6;
-            color: #a97900;
-        }
-
-        .status-published {
-            background: #e5f8ed;
-            color: #188650;
-        }
-
-        /* ================= SECTION ================= */
-
-        .section-card {
-            background: white;
-            border-radius: 22px;
-
-            padding: 28px;
-
-            box-shadow: 0 4px 18px rgba(70,60,130,.06);
-
-            margin-bottom: 22px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 20px;
-        }
-
-        .section-header h3 {
-            font-size: 20px;
-        }
-
-        .section-header span {
-            color: #777394;
-            font-size: 13px;
-        }
-
-        /* ================= MATERI ================= */
-
-        .materi-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .materi-item {
-            background: #faf9ff;
-            border: 1px solid #eeeef5;
-
-            border-radius: 12px;
-
-            padding: 14px 16px;
-
-            color: #45435e;
-            font-size: 14px;
-        }
-
-        .materi-item strong {
-            color: #6553e8;
-            margin-right: 6px;
-        }
-
-        .empty-text {
-            color: #aaa7bc;
-            font-size: 14px;
-        }
-
-        /* ================= SOAL ================= */
-
-        .question-list {
-            padding-left: 22px;
-            margin-bottom: 22px;
-        }
-
-        .question-list li {
-            padding: 12px 5px;
-            border-bottom: 1px solid #f0eff6;
-
-            color: #45435e;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .question-list li:last-child {
-            border-bottom: none;
-        }
-
-        .question-list li::marker {
-            color: #6553e8;
-            font-weight: bold;
-        }
-
-        .question-count {
-            background: #eeeaff;
-            color: #5b4ae3;
-
-            padding: 7px 12px;
-            border-radius: 20px;
-
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* ================= PUBLISH ================= */
-
-        .publish-box {
-            background: #f7f6ff;
-            border: 1px solid #e9e6ff;
-
-            border-radius: 15px;
-
-            padding: 18px;
-
-            margin-top: 20px;
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .publish-box p {
-            color: #777394;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .publish-box strong {
-            display: block;
-            color: #202044;
-            margin-bottom: 4px;
-        }
-
-        /* ================= BOTTOM ACTION ================= */
-
-        .bottom-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-top: 25px;
-        }
-
-        .right-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        /* ================= RESPONSIVE ================= */
-
-        @media(max-width: 900px) {
-
-            .sidebar {
-                display: none;
-            }
-
-            .content {
-                padding: 25px;
-            }
-        }
-
-        @media(max-width: 650px) {
-
-            .topbar {
-                align-items: flex-start;
-            }
-
-            .profile-mini {
-                display: none;
-            }
-
-            .page-header {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .header-actions {
-                width: 100%;
-            }
-
-            .header-actions .btn {
-                flex: 1;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .info-item.full {
-                grid-column: auto;
-            }
-
-            .publish-box {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .bottom-actions {
-                flex-direction: column-reverse;
-                gap: 12px;
-                align-items: stretch;
-            }
-
-            .right-actions {
-                flex-direction: column;
-            }
-
-            .bottom-actions .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-
-<body>
-
-<div class="layout">
-
-
-    <!-- ================= SIDEBAR ================= -->
-
-    <aside class="sidebar">
-
-        <div class="logo">
-
-            <div class="logo-icon">
-                IT
-            </div>
-
-            <div>
-                <h2>ITIK</h2>
-                <span>Portal Guru</span>
-            </div>
-
-        </div>
-
-
-        <div class="menu-title">
-            Menu Utama
-        </div>
-
-
-        <nav class="menu">
-
-            <a href="{{ route('dashboard') }}"
-               class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                ▦ &nbsp; Dashboard
+@extends('layouts.guru')
+@section('title', 'Detail Kuis - ' . $kuis->judul)
+
+@push('styles')
+<style>
+    .meta-box {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .meta-item {
+        background: #fbfafd;
+        border: 1px solid #ebe6f7;
+        border-radius: 12px;
+        padding: 14px 18px;
+    }
+    .meta-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #777394;
+        margin-bottom: 4px;
+    }
+    .meta-val {
+        font-size: 15px;
+        font-weight: 700;
+        color: #202044;
+    }
+    .soal-item {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 14px 16px;
+        border-bottom: 1px solid #f0eff6;
+    }
+    .soal-item:last-child {
+        border-bottom: none;
+    }
+    .soal-num {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #ede9fc;
+        color: #5542dc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+</style>
+@endpush
+
+@section('content')
+
+<div class="page-heading">
+    <div>
+        <a href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}" class="muted small" style="display:inline-block; margin-bottom:6px;">
+            ← Kembali ke daftar kuis
+        </a>
+        <h1>{{ $kuis->judul }}</h1>
+        <p>Detail kuis, jadwal, daftar butir soal, dan publikasi.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        @if ($kuis->status_publikasi === 'terbit')
+            <a href="{{ route('kuis.edit', $kuis->id_kuis) }}" class="btn btn-secondary" onclick="alert('Kuis tersebut tidak dapat diedit karena berstatus terbit. Ubah ke status draft terlebih dahulu.'); return false;">
+                ✎ Edit Kuis
             </a>
-
-            <a href="{{ route('materi.index') }}"
-               class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">
-                ▣ &nbsp; Materi
+        @else
+            <a href="{{ route('kuis.edit', $kuis->id_kuis) }}" class="btn btn-secondary">
+                ✎ Edit Kuis
             </a>
-
-            <a href="{{ route('kuis.index') }}"
-               class="{{ request()->routeIs('kuis.*') ? 'active' : '' }}">
-                ☑ &nbsp; Kuis & Soal
-            </a>
-
-            <a href="{{ route('guru.nilai.index') }}"
-               class="{{ request()->routeIs('guru.nilai.*') ? 'active' : '' }}">
-                ◉ &nbsp; Nilai
-            </a>
-
-            <a href="{{ route('profil') }}"
-               class="{{ request()->routeIs('profil') ? 'active' : '' }}">
-                ◎ &nbsp; Profil
-            </a>
-
-        </nav>
-
-    </aside>
-
-
-    <!-- ================= CONTENT ================= -->
-
-    <main class="content">
-
-
-        <!-- TOPBAR -->
-
-        <div class="topbar">
-
-            <div class="title">
-
-                <h1>Detail Kuis</h1>
-
-                <p>
-                    Informasi dan pengelolaan kuis
-                </p>
-
-            </div>
-
-
-            <div class="profile-mini">
-
-                <div class="avatar-small">
-
-                    {{ strtoupper(substr(Auth::user()->nama_lengkap, 0, 2)) }}
-
-                </div>
-
-                <div>
-
-                    <strong>
-                        {{ Auth::user()->nama_lengkap }}
-                    </strong>
-
-                    <br>
-
-                    <small>
-                        {{ ucfirst(Auth::user()->role) }}
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ERROR -->
-
-        @if ($errors->any())
-
-            <div class="alert-danger">
-
-                <strong>
-                    Kuis belum dapat dipublikasikan:
-                </strong>
-
-                <ul>
-
-                    @foreach ($errors->all() as $error)
-
-                        <li>
-                            {{ $error }}
-                        </li>
-
-                    @endforeach
-
-                </ul>
-
-            </div>
-
         @endif
-
-
-        <!-- PAGE HEADER -->
-
-        <div class="page-header">
-
-            <div>
-
-                <h2>
-                    {{ $kuis->judul }}
-                </h2>
-
-                <p>
-                    Detail informasi kuis
-                </p>
-
-            </div>
-
-
-            <div class="header-actions">
-
-                @if ($kuis->status_publikasi === 'terbit')
-                    <a
-                        href="{{ route('kuis.edit', $kuis->id_kuis) }}"
-                        class="btn btn-secondary"
-                        onclick="alert('Kuis tersebut tidak dapat diedit karena berstatus terbit. Ubah ke status draft terlebih dahulu.'); return false;"
-                    >
-                        ✎ Edit
-                    </a>
-                @else
-                    <a
-                        href="{{ route('kuis.edit', $kuis->id_kuis) }}"
-                        class="btn btn-secondary"
-                    >
-                        ✎ Edit
-                    </a>
-                @endif
-
-                <a
-                    href="{{ route('kuis.index', ['mapel' => $kuis->id_mapel]) }}"
-                    class="btn btn-secondary"
-                >
-                    ← Kembali ke Kuis
-                </a>
-
-            </div>
-
-        </div>
-
-
-        <!-- ================= INFORMASI KUIS ================= -->
-
-        <div class="info-card">
-
-            <div class="info-grid">
-
-
-                <!-- ID -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        ID Kuis
-                    </div>
-
-                    <div class="info-value">
-
-                        <strong>
-                            {{ $kuis->id_kuis }}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <!-- MATA PELAJARAN -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        Mata Pelajaran
-                    </div>
-
-                    <div class="info-value">
-
-                        <strong>
-                            {{ $kuis->mapel?->nama_mapel ?? '-' }}
-                        </strong>
-                        <small style="color: #777394;">({{ $kuis->id_mapel }})</small>
-
-                    </div>
-
-                </div>
-
-
-                <!-- KATEGORI -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        Kategori
-                    </div>
-
-                    <div class="info-value">
-                        {{ $kuis->kategori }}
-                    </div>
-
-                </div>
-
-
-                <!-- TINGKAT KESULITAN -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        Tingkat Kesulitan
-                    </div>
-
-                    <div class="info-value">
-                        <span class="status status-{{ $kuis->tingkat_kesulitan ?? 'mudah' }}">
-                            {{ ucfirst($kuis->tingkat_kesulitan ?? 'mudah') }}
-                        </span>
-                    </div>
-
-                </div>
-
-
-                <!-- DESKRIPSI -->
-
-                <div class="info-item full">
-
-                    <div class="info-label">
-                        Deskripsi
-                    </div>
-
-                    <div class="info-value">
-                        {{ $kuis->deskripsi ?? '-' }}
-                    </div>
-
-                </div>
-
-
-                <!-- KKM -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        KKM
-                    </div>
-
-                    <div class="info-value">
-
-                        {{ $kuis->kkm ?? '-' }}
-
-                    </div>
-
-                </div>
-
-
-                <!-- WAKTU -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        Alokasi Waktu
-                    </div>
-
-                    <div class="info-value">
-
-                        {{ $kuis->alokasi_waktu ?? '-' }} menit
-
-                    </div>
-
-                </div>
-
-
-                <!-- STATUS -->
-
-                <div class="info-item">
-
-                    <div class="info-label">
-                        Status
-                    </div>
-
-                    <div class="info-value">
-
-                        @if ($kuis->status_publikasi === 'draft')
-
-                            <span class="status status-draft">
-                                Draft
-                            </span>
-
-                        @else
-
-                            <span class="status status-published">
-                                {{ $kuis->status_publikasi }}
-                            </span>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-
-                <!-- JADWAL (untuk semua kategori yang memiliki waktu mulai/selesai) -->
-
-                @if ($kuis->waktu_mulai || $kuis->waktu_selesai)
-
-                    <div class="info-item">
-
-                        <div class="info-label">
-                            Waktu Mulai
-                        </div>
-
-                        <div class="info-value">
-                            {{ $kuis->waktu_mulai?->format('d-m-Y H:i') ?? '-' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="info-item">
-
-                        <div class="info-label">
-                            Waktu Selesai
-                        </div>
-
-                        <div class="info-value">
-                            {{ $kuis->waktu_selesai?->format('d-m-Y H:i') ?? '-' }}
-                        </div>
-
-                    </div>
-
-                @elseif ($kuis->kategori === 'ulangan')
-
-                    <div class="info-item">
-
-                        <div class="info-label">
-                            Waktu Mulai
-                        </div>
-
-                        <div class="info-value">
-                            {{ $kuis->waktu_mulai?->format('d-m-Y H:i') ?? '-' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="info-item">
-
-                        <div class="info-label">
-                            Waktu Selesai
-                        </div>
-
-                        <div class="info-value">
-                            {{ $kuis->waktu_selesai?->format('d-m-Y H:i') ?? '-' }}
-                        </div>
-
-                    </div>
-
-                @endif
-
-            </div>
-
-
-            <!-- PUBLISH -->
-
-            @if ($kuis->status_publikasi === 'draft' && $kuis->is_aktif)
-
-                @if (Auth::user()->role === 'guru')
-
-                    <div class="publish-box">
-
-                        <div>
-
-                            <strong>
-                                Kuis masih dalam status draft
-                            </strong>
-
-                            <p>
-                                Publikasikan kuis agar dapat digunakan sesuai pengaturan yang telah dibuat.
-                            </p>
-
-                        </div>
-
-
-                        <form
-                            action="{{ route('kuis.publish', $kuis->id_kuis) }}"
-                            method="POST"
-                            onsubmit="return confirm('Yakin ingin mempublikasikan kuis ini?');"
-                        >
-
-                            @csrf
-
-                            @method('PATCH')
-
-                            <button
-                                type="submit"
-                                class="btn btn-success"
-                            >
-                                ✓ Publikasikan Kuis
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                @endif
-
-            @elseif ($kuis->status_publikasi === 'terbit' && $kuis->is_aktif)
-
-                @if (Auth::user()->role === 'guru')
-
-                    <div class="publish-box" style="background:#fff8e8; border:1.5px solid #fde8a0;">
-
-                        <div>
-
-                            <strong style="color:#b97000;">
-                                🟢 Kuis sedang aktif / terbit
-                            </strong>
-
-                            <p style="color:#888; margin-top:5px;">
-                                Kuis ini dapat dikerjakan oleh siswa. Klik "Tarik Terbit" jika ingin menghentikan sementara.
-                            </p>
-
-                        </div>
-
-
-                        <form
-                            action="{{ route('kuis.unpublish', $kuis->id_kuis) }}"
-                            method="POST"
-                            onsubmit="return confirm('Yakin ingin menarik kuis ini kembali ke draft? Siswa tidak akan bisa mengerjakan kuis ini.');"
-                        >
-
-                            @csrf
-
-                            @method('PATCH')
-
-                            <button
-                                type="submit"
-                                class="btn"
-                                style="background:#d64545; color:white;"
-                            >
-                                ✕ Tarik / Batalkan Terbit
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                @endif
-
-            @endif
-
-        </div>
-
-
-        <!-- ================= MATERI ================= -->
-
-        <div class="section-card">
-
-            <div class="section-header">
-
-                <h3>
-                    Materi
-                </h3>
-
-            </div>
-
-
-            <div class="materi-list">
-
-                @forelse ($kuis->materi as $materi)
-
-                    <div class="materi-item">
-
-                        <strong>•</strong>
-
-                        {{ $materi->judul }}
-
-                        @if ($materi->bab)
-
-                            <span>
-                                ({{ $materi->bab }})
-                            </span>
-
-                        @endif
-
-                    </div>
-
-                @empty
-
-                    <p class="empty-text">
-                        Tidak ada materi terkait.
-                    </p>
-
-                @endforelse
-
-            </div>
-
-        </div>
-
-
-        <!-- ================= SOAL ================= -->
-
-        <div class="section-card">
-
-            <div class="section-header">
-
-                <h3>
-                    Soal
-                </h3>
-
-                <span class="question-count">
-
-                    {{ $kuis->soal->count() }} soal
-
-                </span>
-
-            </div>
-
-
-            @if ($kuis->soal->count() > 0)
-
-                <ol class="question-list">
-
-                    @foreach ($kuis->soal as $soal)
-
-                        <li>
-                            {{ $soal->pertanyaan }}
-                        </li>
-
-                    @endforeach
-
-                </ol>
-
-            @else
-
-                <p class="empty-text">
-                    Belum ada soal.
-                </p>
-
-            @endif
-
-
-            <a
-                href="{{ route('kuis.soal.index', $kuis->id_kuis) }}"
-                class="btn btn-primary"
-            >
-                ⚙ Kelola Soal
-            </a>
-
-        </div>
-
-    </main>
-
+        <a href="{{ route('kuis.soal.index', $kuis->id_kuis) }}" class="btn btn-primary">
+            ⚙ Kelola Bank Soal
+        </a>
+    </div>
 </div>
 
-</body>
-</html>
+@if ($errors->any())
+    <div class="alert alert-danger" style="background:#fde8e8; border:1px solid #f8b4b4; color:#9b1c1c; padding:14px 18px; border-radius:12px; margin-bottom:20px;">
+        <strong>Kuis belum dapat dipublikasikan:</strong>
+        <ul style="margin: 8px 0 0 20px;">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<!-- STATUS PUBLIKASI BANNER -->
+@if ($kuis->status_publikasi === 'draft' && $kuis->is_aktif)
+    <div class="card" style="background: #fffdf5; border-color: #fde8a0; margin-bottom: 24px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+        <div>
+            <strong style="color: #946200; font-size: 16px; display: block; margin-bottom: 4px;">Kuis masih dalam status DRAFT</strong>
+            <p class="muted small" style="margin: 0;">Publikasikan kuis agar siswa dapat melihat dan mengerjakan kuis ini sesuai jadwal.</p>
+        </div>
+        <form action="{{ route('kuis.publish', $kuis->id_kuis) }}" method="POST" onsubmit="return confirm('Yakin ingin mempublikasikan kuis ini?');">
+            @csrf
+            @method('PATCH')
+            <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #10b981;">
+                ✓ Publikasikan Kuis
+            </button>
+        </form>
+    </div>
+@elseif ($kuis->status_publikasi === 'terbit' && $kuis->is_aktif)
+    <div class="card" style="background: #f0fdf4; border-color: #bbf7d0; margin-bottom: 24px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+        <div>
+            <strong style="color: #166534; font-size: 16px; display: block; margin-bottom: 4px;">🟢 Kuis AKTIF / TERBIT</strong>
+            <p class="muted small" style="margin: 0;">Kuis ini dapat dikerjakan siswa. Tarik kuis kembali ke draft jika ingin menghentikan pengerjaan sementara atau mengubah butir soal.</p>
+        </div>
+        <form action="{{ route('kuis.unpublish', $kuis->id_kuis) }}" method="POST" onsubmit="return confirm('Yakin ingin menarik kuis ini kembali ke draft? Siswa tidak akan bisa mengerjakan kuis ini.');">
+            @csrf
+            @method('PATCH')
+            <button type="submit" class="btn btn-secondary" style="color: #b91c1c; border-color: #fca5a5;">
+                ✕ Tarik ke Draft
+            </button>
+        </form>
+    </div>
+@endif
+
+<!-- METADATA GRID -->
+<section class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <div>
+            <h2>Informasi Kuis</h2>
+            <p class="muted">Ringkasan konfigurasi dan parameter pengerjaan.</p>
+        </div>
+        <div>
+            @if ($kuis->status_publikasi === 'draft')
+                <span class="badge badge-warning">Draft</span>
+            @else
+                <span class="badge badge-success">Terbit</span>
+            @endif
+        </div>
+    </div>
+
+    <div class="meta-box">
+        <div class="meta-item">
+            <div class="meta-label">Mata Pelajaran</div>
+            <div class="meta-val">{{ $kuis->mapel?->nama_mapel ?? '-' }} <span class="muted small">({{ $kuis->id_mapel }})</span></div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Kategori</div>
+            <div class="meta-val" style="text-transform: capitalize;">{{ $kuis->kategori }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Tingkat Kesulitan</div>
+            <div class="meta-val">
+                <span class="badge {{ $kuis->tingkat_kesulitan === 'sulit' ? 'badge-danger' : ($kuis->tingkat_kesulitan === 'sedang' ? 'badge-warning' : 'badge-info') }}">
+                    {{ ucfirst($kuis->tingkat_kesulitan ?? 'mudah') }}
+                </span>
+            </div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">KKM</div>
+            <div class="meta-val">{{ $kuis->kkm ?? '-' }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Alokasi Waktu</div>
+            <div class="meta-val">{{ $kuis->alokasi_waktu ? $kuis->alokasi_waktu . ' Menit' : 'Tidak Dibatasi' }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Tahun Ajaran</div>
+            <div class="meta-val">{{ $kuis->tahunAjaran?->nama ?? '-' }}</div>
+        </div>
+        @if ($kuis->waktu_mulai || $kuis->waktu_selesai)
+            <div class="meta-item">
+                <div class="meta-label">Waktu Mulai</div>
+                <div class="meta-val">{{ $kuis->waktu_mulai?->format('d M Y, H:i') ?? '-' }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Waktu Selesai</div>
+                <div class="meta-val">{{ $kuis->waktu_selesai?->format('d M Y, H:i') ?? '-' }}</div>
+            </div>
+        @endif
+    </div>
+
+    @if ($kuis->deskripsi)
+        <div style="background: #fbfafd; border-radius: 12px; padding: 14px 18px; border: 1px solid #ebe6f7;">
+            <div class="meta-label">Deskripsi / Petunjuk</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #373356;">{!! nl2br(e($kuis->deskripsi)) !!}</div>
+        </div>
+    @endif
+</section>
+
+<div class="grid grid-2">
+    <!-- MATERI TERKAIT -->
+    <section class="card">
+        <div class="card-header">
+            <div>
+                <h2>Materi Terkait</h2>
+                <p class="muted">Bab pembelajaran yang dicakup oleh kuis ini.</p>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            @forelse ($kuis->materi as $materi)
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fbfafd; border-radius: 10px; border: 1px solid #f0eff6;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #ede9fc; color: #5542dc; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">
+                        📖
+                    </div>
+                    <div>
+                        <strong style="font-size: 14px; color: #202044;">{{ $materi->judul }}</strong>
+                        @if ($materi->bab)
+                            <span class="muted small" style="display: block;">Bab: {{ $materi->bab }}</span>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="empty-state" style="padding: 24px 16px;">
+                    <p class="muted">Tidak ada materi yang ditautkan ke kuis ini.</p>
+                </div>
+            @endforelse
+        </div>
+    </section>
+
+    <!-- DAFTAR SOAL -->
+    <section class="card">
+        <div class="card-header">
+            <div>
+                <h2>Butir Soal ({{ $kuis->soal->count() }})</h2>
+                <p class="muted">Pratinjau butir pertanyaan dalam kuis ini.</p>
+            </div>
+            <a href="{{ route('kuis.soal.index', $kuis->id_kuis) }}" class="btn btn-secondary small">
+                Buka Bank Soal →
+            </a>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto;">
+            @forelse ($kuis->soal as $index => $soal)
+                <div class="soal-item">
+                    <div class="soal-num">{{ $index + 1 }}</div>
+                    <div style="flex: 1; font-size: 14px; line-height: 1.5; color: #202044;">
+                        {{ \Illuminate\Support\Str::limit($soal->pertanyaan, 110) }}
+                        <div style="margin-top: 4px;">
+                            <span class="badge badge-info" style="font-size: 11px;">Bobot: {{ $soal->bobot }}</span>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="empty-state" style="padding: 30px 16px; text-align: center;">
+                    <p class="muted" style="margin-bottom: 12px;">Kuis ini belum memiliki butir soal.</p>
+                    <a href="{{ route('kuis.soal.create', $kuis->id_kuis) }}" class="btn btn-primary small">
+                        + Tambah Soal Pertama
+                    </a>
+                </div>
+            @endforelse
+        </div>
+    </section>
+</div>
+
+@endsection

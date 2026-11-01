@@ -232,6 +232,8 @@ Route::middleware(['auth', 'role:siswa'])
     
         Route::get('/nilai', [SiswaKuisController::class, 'daftarNilai'])
             ->name('nilai');
+        Route::get('/nilai/semua', [SiswaKuisController::class, 'daftarNilai'])
+            ->name('nilai.index');
 
 
         // -------------------------

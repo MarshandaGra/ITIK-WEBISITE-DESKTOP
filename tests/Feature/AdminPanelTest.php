@@ -584,7 +584,7 @@ class AdminPanelTest extends TestCase
 
     public static function accountResources(): array
     {
-        return ['siswa' => ['siswa', 'U003', 'siswa.dashboard'], 'guru' => ['guru', 'U002', 'materi.index']];
+        return ['siswa' => ['siswa', 'U003', 'siswa.dashboard'], 'guru' => ['guru', 'U002', 'dashboard']];
     }
 
     #[DataProvider('accountResources')]

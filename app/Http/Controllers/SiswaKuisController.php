@@ -649,9 +649,12 @@ class SiswaKuisController extends Controller
             }
         }
 
+        $lulus = $hasil->nilai !== null && $kuis->kkm !== null && (float) $hasil->nilai >= (float) $kuis->kkm;
+
         return view('siswa.kuis.hasil', compact(
             'kuis',
             'hasil',
+            'lulus',
             'remedial',
             'nilaiAsal',
             'durasiTampil',

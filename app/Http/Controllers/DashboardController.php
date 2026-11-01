@@ -19,9 +19,6 @@ class DashboardController extends Controller
             ->where('is_aktif', 1)
             ->count();
 
-        $jumlahSoal = DB::table('soal')
-            ->count();
-
         $rataNilai = DB::table('mengerjakan')
             ->whereNotNull('nilai')
             ->avg('nilai');
@@ -41,7 +38,6 @@ class DashboardController extends Controller
             'jumlahSiswa',
             'jumlahMateri',
             'jumlahKuis',
-            'jumlahSoal',
             'rataNilai',
             'kuisTerbaru',
             'materiTerbaru'

@@ -138,7 +138,7 @@ class LoginNisnNipTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertRedirect(route('materi.index'));
+        $response->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($this->guru);
     }
 

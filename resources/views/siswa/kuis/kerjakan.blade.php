@@ -413,50 +413,36 @@
 
 <div class="layout">
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR CBT (NAVIGASI LUAR DITUTUP) -->
 
-    <aside class="sidebar">
+    <aside class="sidebar" style="background: linear-gradient(180deg, #2c285a, #1b173d);">
 
         <div class="logo">
-            <div class="logo-icon">IT</div>
+            <div class="logo-icon" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25);">IT</div>
 
             <div>
-                <h2>ITIK</h2>
-                <span>Portal Guru</span>
+                <h2>ITIK CBT</h2>
+                <span>Moda Ujian Aktif</span>
             </div>
         </div>
 
-        <div class="menu-title">
-            Menu Utama
+        <div style="background: rgba(255, 75, 75, 0.18); border: 1px solid rgba(255, 100, 100, 0.4); border-radius: 16px; padding: 18px 16px; margin-bottom: 25px; text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 6px;">🔒</div>
+            <div style="font-weight: bold; font-size: 15px; color: #ffb8b8; margin-bottom: 6px;">Navigasi Dikunci</div>
+            <p style="font-size: 13px; color: #e0dcf8; line-height: 1.5; margin: 0;">
+                Semua menu luar dinonaktifkan demi integritas ujian. Harap selesaikan kuis hingga tuntas.
+            </p>
         </div>
 
-        <nav class="menu">
+        <div class="menu-title" style="color: #9f9ac7;">
+            Panduan Peserta
+        </div>
 
-            <a href="{{ route('siswa.dashboard') }}">
-                ▦ &nbsp; Dashboard
-            </a>
-
-            <a href="{{ url('/siswa/materi') }}">
-                ▣ &nbsp; Materi
-            </a>
-
-            <a href="{{ url('/siswa/kuis') }}" class="active">
-                ☑ &nbsp; Kuis
-            </a>
-
-            <a href="{{ url('/siswa/nilai') }}">
-                ◉ &nbsp; Nilai Saya
-            </a>
-
-            <a href="{{ url('/siswa/remedial') }}">
-                ↻ &nbsp; Remedial
-            </a>
-
-            <a href="{{ route('profil') }}">
-                ◎ &nbsp; Profil
-            </a>
-
-        </nav>
+        <div style="font-size: 13px; color: #c4c0e6; line-height: 1.6;">
+            <p style="margin-bottom: 12px;">✓ Jawaban tersimpan otomatis saat memilih opsi.</p>
+            <p style="margin-bottom: 12px;">✓ Jangan menutup browser atau berpindah tab.</p>
+            <p style="margin-bottom: 0;">✓ Klik tombol <strong>Kumpulkan kuis</strong> jika sudah selesai.</p>
+        </div>
 
     </aside>
 
@@ -485,46 +471,6 @@
                 </div>
 
             </div>
-
-            @if ($item->tipe_soal === 'essay')
-                <label for="jawaban-{{ $item->id_soal }}">Jawaban teks</label>
-                <textarea
-                    id="jawaban-{{ $item->id_soal }}"
-                    data-soal="{{ $item->id_soal }}"
-                    rows="6"
-                    maxlength="10000"
-                    style="display: block; width: 100%; max-width: 800px;"
-                >{{ $jawabanTeksimpan }}</textarea>
-            @else
-                @foreach (['A' => 'a', 'B' => 'b', 'C' => 'c', 'D' => 'd', 'E' => 'e'] as $huruf => $opsi)
-                    @php
-                        $teksOpsi = $item->{'opsi_' . $opsi};
-                        $gambarOpsi = $item->{'gambar_opsi_' . $opsi};
-                    @endphp
-
-                    @if ($teksOpsi || $gambarOpsi)
-                        <label style="display: block; margin-top: 10px;">
-                            <input
-                                type="radio"
-                                name="jawaban[{{ $item->id_soal }}]"
-                                value="{{ $huruf }}"
-                                data-soal="{{ $item->id_soal }}"
-                                @checked($jawabanTersimpan === $huruf)
-                            >
-                            {{ $huruf }}. {{ $teksOpsi }}
-                            @if ($gambarOpsi)
-                                <img
-                                    src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($gambarOpsi) }}"
-                                    alt="Gambar opsi {{ $huruf }}"
-                                    style="display: block; max-width: 280px; max-height: 200px; object-fit: contain; margin-left: 25px;"
-                                >
-                            @endif
-                        </label>
-                    @endif
-                @endforeach
-            @endif
-
-            <small id="status-{{ $item->id_soal }}" aria-live="polite"></small>
 
         </div>
 
@@ -726,98 +672,51 @@ function perbaruiNavigasi() {
 perbaruiNavigasi();
 
 document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-    radio.addEventListener('change', () => queueAnswerSave(radio));
-});
 
-document.querySelectorAll('textarea[data-soal]').forEach(function (textarea) {
-    textarea.addEventListener('input', () => queueAnswerSave(textarea));
-});
+    radio.addEventListener('change', function () {
 
         perbaruiNavigasi();
 
         const idSoal = this.dataset.soal;
         const jawaban = this.value;
 
-function saveAnswer(field) {
-    if (!csrfToken) {
-        return Promise.reject(new Error('CSRF token tidak ditemukan.'));
-    }
-
-    const idSoal = field.dataset.soal;
-    const payload = {
-        id_soal: idSoal,
-        ...(field.type === 'radio'
-            ? { jawaban: field.value }
-            : { jawaban_text: field.value })
-    };
-    const status = document.getElementById(`status-${idSoal}`);
-    status.textContent = 'Menyimpan...';
-
-    let request = fetch(saveUrl, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(async response => {
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || 'Jawaban gagal disimpan.');
+        if (!csrfToken) {
+            console.error('CSRF token tidak ditemukan. Tambahkan meta csrf-token di view atau layout.');
+            return;
         }
-        status.textContent = 'Tersimpan';
-    })
-    .catch(error => {
-        status.textContent = 'Gagal menyimpan jawaban. Coba lagi.';
-        console.error('Gagal menyimpan jawaban:', error);
-        throw error;
-    })
-    .finally(() => {
-        if (pendingSaves.get(idSoal) === request) {
-            pendingSaves.delete(idSoal);
-        }
+
+        fetch(
+            "{{ route('siswa.kuis.jawaban', $kuis->id_kuis) }}",
+            {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    id_soal: idSoal,
+                    jawaban: jawaban
+                })
+            }
+        )
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.success) {
+                console.log('Jawaban tersimpan:', idSoal, jawaban);
+            } else {
+                console.error(data.message);
+            }
+
+        })
+        .catch(error => {
+            console.error('Gagal menyimpan jawaban:', error);
+        });
+
     });
 
-    pendingSaves.set(idSoal, request);
-    return request;
-}
-
-function queueAnswerSave(field) {
-    const idSoal = field.dataset.soal;
-    clearTimeout(saveTimers.get(idSoal));
-    saveTimers.set(idSoal, setTimeout(() => {
-        saveAnswer(field).catch(() => {});
-    }, 400));
-}
-
-let waktuHabis = false;
-document.getElementById('submitKuis').addEventListener('submit', async function (event) {
-    if (!waktuHabis && !confirm('Yakin ingin mengumpulkan kuis? Jawaban tidak dapat diubah lagi.')) {
-        event.preventDefault();
-        return;
-    }
-
-    event.preventDefault();
-
-    const changedAnswers = [
-        ...document.querySelectorAll('input[type="radio"]:checked, textarea[data-soal]')
-    ];
-
-    changedAnswers.forEach(field => {
-        const idSoal = field.dataset.soal;
-        clearTimeout(saveTimers.get(idSoal));
-    });
-
-    try {
-        await Promise.allSettled([...pendingSaves.values()]);
-        await Promise.all(changedAnswers.map(field => saveAnswer(field)));
-        this.submit();
-    } catch (error) {
-        alert('Jawaban belum tersimpan. Periksa koneksi lalu coba kumpulkan kembali.');
-    }
 });
 
 //Timer
@@ -864,6 +763,60 @@ document.getElementById('submitKuis').addEventListener('submit', async function 
     updateTimer();
 
     setInterval(updateTimer, 1000);
+
+    /* ========================================================
+       PENGUNCI NAVIGASI & KEAMANAN MODA UJIAN (CBT LOCK)
+       ======================================================== */
+    let formSubmitted = false;
+
+    // 1. Tangani submit resmi kuis
+    const formKuisSubmit = document.getElementById('form-kuis');
+    if (formKuisSubmit) {
+        formKuisSubmit.addEventListener('submit', function () {
+            formSubmitted = true;
+        });
+    }
+
+    // 2. Cegah reload / tutup tab / navigasi keluar
+    window.addEventListener('beforeunload', function (e) {
+        if (!formSubmitted && !sudahSubmit) {
+            e.preventDefault();
+            e.returnValue = 'Ujian sedang berlangsung! Jawaban Anda belum dikumpulkan. Jangan tinggalkan halaman ini.';
+            return e.returnValue;
+        }
+    });
+
+    // 3. Kunci tombol Back / Forward browser
+    history.pushState(null, document.title, location.href);
+    window.addEventListener('popstate', function () {
+        history.pushState(null, document.title, location.href);
+        alert('⚠️ PERINGATAN: Navigasi browser dinonaktifkan selama ujian berlangsung. Harap selesaikan kuis dan klik tombol "Kumpulkan kuis".');
+    });
+
+    // 4. Blokir tombol refresh keyboard (F5, Ctrl+R, Alt+Left)
+    window.addEventListener('keydown', function (e) {
+        if (
+            e.key === 'F5' ||
+            (e.ctrlKey && (e.key === 'r' || e.key === 'R')) ||
+            (e.altKey && e.key === 'ArrowLeft')
+        ) {
+            e.preventDefault();
+            alert('⚠️ Tombol refresh dan navigasi kembali dinonaktifkan selama ujian.');
+            return false;
+        }
+    });
+
+    // 5. Deteksi siswa berpindah window / tab browser
+    let switchTabCount = 0;
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            switchTabCount++;
+        } else {
+            if (switchTabCount > 0 && !formSubmitted && !sudahSubmit) {
+                alert('⚠️ PERINGATAN: Anda terdeteksi meninggalkan halaman ujian (' + switchTabCount + ' kali). Harap tetap berada di halaman ujian hingga selesai dikumpulkan!');
+            }
+        }
+    });
 </script>
 
 </body>

@@ -1,706 +1,128 @@
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Tambah Materi - ITIK</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background: #f5f4fc;
-            color: #202044;
-        }
-
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-
-        /* ================= SIDEBAR ================= */
-
-        .sidebar {
-            width: 270px;
-            background: linear-gradient(180deg, #7160ef, #5948dd);
-            color: white;
-            padding: 30px 25px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 60px;
-        }
-
-        .logo-icon {
-            width: 55px;
-            height: 55px;
-            border: 1px solid rgba(255,255,255,.4);
-            border-radius: 16px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .logo h2 {
-            font-size: 22px;
-        }
-
-        .logo span {
-            font-size: 14px;
-            opacity: .85;
-        }
-
-        .menu-title {
-            font-size: 14px;
-            opacity: .7;
-            margin-bottom: 15px;
-        }
-
-        .menu a {
-            display: block;
-            text-decoration: none;
-            color: white;
-
-            padding: 15px 18px;
-            border-radius: 15px;
-            margin-bottom: 8px;
-
-            font-size: 17px;
-        }
-
-        .menu a.active {
-            background: white;
-            color: #5b4ae3;
-        }
-
-        .menu a:hover {
-            background: rgba(255,255,255,.15);
-        }
-
-
-        /* ================= CONTENT ================= */
-
-        .content {
-            flex: 1;
-            padding: 30px 45px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 35px;
-        }
-
-        .title h1 {
-            font-size: 34px;
-            margin-bottom: 5px;
-        }
-
-        .title p {
-            color: #777394;
-            font-size: 17px;
-        }
-
-        .profile-mini {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-
-            background: white;
-            padding: 10px 18px;
-            border-radius: 40px;
-
-            box-shadow: 0 3px 15px rgba(0,0,0,.04);
-        }
-
-        .avatar-small {
-            width: 45px;
-            height: 45px;
-
-            border-radius: 50%;
-            background: #6553e8;
-            color: white;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-weight: bold;
-        }
-
-        .profile-mini small {
-            color: #777394;
-        }
-
-
-        /* ================= PAGE HEADER ================= */
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 25px;
-        }
-
-        .page-header h2 {
-            font-size: 22px;
-        }
-
-        .page-header p {
-            color: #777394;
-            margin-top: 5px;
-        }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-
-            background: #eeeaff;
-            color: #5b4ae3;
-
-            text-decoration: none;
-
-            padding: 13px 20px;
-            border-radius: 13px;
-
-            font-weight: bold;
-        }
-
-        .btn-back:hover {
-            background: #e2ddff;
-        }
-
-
-        /* ================= FORM ================= */
-
-        .form-card {
-            background: white;
-            border-radius: 23px;
-            padding: 30px;
-
-            box-shadow: 0 4px 18px rgba(70,60,130,.06);
-
-            max-width: 100%;
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        .form-group label {
-            display: block;
-
-            color: #202044;
-            font-size: 14px;
-            font-weight: bold;
-
-            margin-bottom: 8px;
-        }
-
-        .required {
-            color: #d64545;
-        }
-
-        .form-control {
-            width: 100%;
-
-            border: 1px solid #e3e1ef;
-            border-radius: 12px;
-
-            padding: 13px 16px;
-
-            outline: none;
-            font-size: 14px;
-
-            color: #202044;
-            background: white;
-
-            transition: .2s;
-        }
-
-        .form-control:focus {
-            border-color: #7160ef;
-            box-shadow: 0 0 0 3px rgba(113,96,239,.08);
-        }
-
-        textarea.form-control {
-            min-height: 140px;
-            resize: vertical;
-            line-height: 1.6;
-        }
-
-        .form-hint {
-            color: #aaa7bc;
-            font-size: 12px;
-            margin-top: 7px;
-        }
-
-
-        /* ================= ERROR ================= */
-
-        .error-box {
-            background: #fff0f0;
-            border: 1px solid #ffd0d0;
-
-            color: #d64545;
-
-            padding: 15px 18px;
-            border-radius: 12px;
-
-            margin-bottom: 25px;
-        }
-
-        .error-box strong {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .error-box ul {
-            padding-left: 20px;
-        }
-
-        .error-box li {
-            margin-bottom: 4px;
-        }
-
-
-        /* ================= BUTTON ================= */
-
-        .form-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-
-            margin-top: 30px;
-            padding-top: 22px;
-
-            border-top: 1px solid #eeeef5;
-        }
-
-        .btn {
-            border: none;
-            cursor: pointer;
-
-            text-decoration: none;
-
-            padding: 12px 20px;
-            border-radius: 12px;
-
-            font-size: 14px;
-            font-weight: bold;
-
-            transition: .2s;
-        }
-
-        .btn-cancel {
-            background: #f1f0f7;
-            color: #777394;
-        }
-
-        .btn-cancel:hover {
-            background: #e5e4ed;
-        }
-
-        .btn-save {
-            background: #6553e8;
-            color: white;
-        }
-
-        .btn-save:hover {
-            background: #5543d5;
-        }
-
-
-        /* ================= RESPONSIVE ================= */
-
-        @media(max-width: 850px) {
-
-            .sidebar {
-                display: none;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .topbar {
-                margin-bottom: 25px;
-            }
-
-            .page-header {
-                gap: 15px;
-            }
-
-            .form-card {
-                padding: 22px;
-            }
-        }
-
-        @media(max-width: 600px) {
-
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .btn-back {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .form-footer {
-                flex-direction: column-reverse;
-            }
-
-            .btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-    </style>
-</head>
-
-
-<body>
-
-<div class="layout">
-
-
-    <!-- ================= SIDEBAR ================= -->
-
-    <aside class="sidebar">
-
-        <div class="logo">
-
-            <div class="logo-icon">
-                IT
-            </div>
-
-            <div>
-                <h2>ITIK</h2>
-                <span>Portal Guru</span>
-            </div>
-
-        </div>
-
-
-        <div class="menu-title">
-            Menu Utama
-        </div>
-
-
-        <nav class="menu">
-
-            <a href="{{ route('dashboard') }}"
-               class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                ▦ &nbsp; Dashboard
-            </a>
-
-            <a href="{{ route('materi.index') }}"
-               class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">
-                ▣ &nbsp; Materi
-            </a>
-
-            <a href="{{ route('kuis.index') }}"
-               class="{{ request()->routeIs('kuis.*') ? 'active' : '' }}">
-                ☑ &nbsp; Kuis & Soal
-            </a>
-
-            <a href="{{ route('guru.nilai.index') }}"
-               class="{{ request()->routeIs('guru.nilai.*') ? 'active' : '' }}">
-                ◉ &nbsp; Nilai
-            </a>
-
-            <a href="{{ route('profil') }}"
-               class="{{ request()->routeIs('profil') ? 'active' : '' }}">
-                ◎ &nbsp; Profil
-            </a>
-
-        </nav>
-
-    </aside>
-
-
-    <!-- ================= CONTENT ================= -->
-
-    <main class="content">
-
-
-        <!-- TOPBAR -->
-
-        <div class="topbar">
-
-            <div class="title">
-
-                <h1>Tambah Materi</h1>
-
-                <p>
-                    Tambahkan materi pembelajaran baru
-                </p>
-
-            </div>
-
-
-            <div class="profile-mini">
-
-                <div class="avatar-small">
-
-                    {{ strtoupper(substr(Auth::user()->nama_lengkap, 0, 2)) }}
-
-                </div>
-
-                <div>
-
-                    <strong>
-                        {{ Auth::user()->nama_lengkap }}
-                    </strong>
-
-                    <br>
-
-                    <small>
-                        {{ ucfirst(Auth::user()->role) }}
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ================= HEADER ================= -->
-
-        <div class="page-header">
-
-            <div>
-
-                <h2>Form Materi</h2>
-
-                <p>
-                    Isi informasi materi yang ingin ditambahkan
-                </p>
-
-            </div>
-
-
-            <a
-                href="{{ route('materi.index') }}"
-                class="btn-back"
-            >
-                ← Kembali ke Materi
-            </a>
-
-        </div>
-
-
-        <!-- ================= FORM CARD ================= -->
-
-        <div class="form-card">
-
-
-            <!-- ERROR -->
-
-            @if($errors->any())
-
-                <div class="error-box">
-
-                    <strong>
-                        Terjadi kesalahan:
-                    </strong>
-
-                    <ul>
-
-                        @foreach($errors->all() as $error)
-
-                            <li>
-                                {{ $error }}
-                            </li>
-
-                        @endforeach
-
-                    </ul>
-
-                </div>
-
-            @endif
-
-
-            <!-- FORM -->
-
-            <form
-                action="{{ route('materi.store') }}"
-                method="POST"
-                enctype="multipart/form-data"
-            >
-
-                @csrf
-
-
-                <!-- JUDUL -->
-
-                <div class="form-group">
-
-                    <label>
-                        Judul <span class="required">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="judul"
-                        class="form-control"
-                        value="{{ old('judul') }}"
-                        placeholder="Masukkan judul materi"
-                    >
-
-                </div>
-
-
-                <!-- BAB -->
-
-                <div class="form-group">
-
-                    <label>
-                        Bab
-                    </label>
-
-                    <input
-                        type="text"
-                        name="bab"
-                        class="form-control"
-                        value="{{ old('bab') }}"
-                        placeholder="Contoh: Bab 1"
-                    >
-
-                </div>
-
-
-                <!-- KELAS -->
-
-                <div class="form-group">
-
-                    <label>
-                        Kelas
-                    </label>
-
-                    <input
-                        type="text"
-                        name="kelas"
-                        class="form-control"
-                        value="{{ old('kelas') }}"
-                        placeholder="Contoh: X RPL 1"
-                    >
-
-                </div>
-
-
-                <!-- DESKRIPSI -->
-
-                <div class="form-group">
-
-                    <label>
-                        Deskripsi
-                    </label>
-
-                    <textarea
-                        name="deskripsi"
-                        class="form-control"
-                        placeholder="Masukkan deskripsi materi"
-                    >{{ old('deskripsi') }}</textarea>
-
-                </div>
-
-
-                <!-- FILE PDF -->
-
-                <div class="form-group">
-
-                    <label>
-                        File PDF Materi
-                    </label>
-
-                    <input
-                        type="file"
-                        name="file_pdf"
-                        class="form-control"
-                        accept=".pdf,application/pdf"
-                    >
-
-                    <div class="form-hint">
-                        Unggah file PDF materi (maksimal 10 MB).
-                        Siswa dapat langsung membaca PDF di halaman materi.
-                    </div>
-
-                </div>
-
-
-                <!-- YOUTUBE -->
-
-                <div class="form-group">
-
-                    <label>
-                        Link YouTube
-                    </label>
-
-                    <input
-                        type="url"
-                        name="link_youtube"
-                        class="form-control"
-                        value="{{ old('link_youtube') }}"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                    >
-
-                </div>
-
-
-                <!-- BUTTON -->
-
-                <div class="form-footer">
-
-                    <a
-                        href="{{ route('materi.index') }}"
-                        class="btn btn-cancel"
-                    >
-                        Batal
-                    </a>
-
-                    <button
-                        type="submit"
-                        class="btn btn-save"
-                    >
-                        Simpan Materi
-                    </button>
-
-                </div>
-
-
-            </form>
-
-        </div>
-
-
-    </main>
-
+@extends('layouts.guru')
+@section('title', 'Tambah Materi')
+
+@section('content')
+
+<div class="page-heading">
+    <div>
+        <a href="{{ request('mapel') ? route('materi.index', ['mapel' => request('mapel')]) : route('materi.index') }}" class="btn btn-secondary" style="display:inline-block; margin-bottom:10px;">
+            ← Kembali
+        </a>
+        <h1>Tambah Materi</h1>
+        <p>Lengkapi formulir di bawah ini untuk menambahkan materi pembelajaran baru.</p>
+    </div>
 </div>
 
-</body>
+<section class="card form-card">
+    <div class="card-header">
+        <div>
+            <h2>Formulir Materi Baru</h2>
+            <p class="muted">Tanda bintang (<span style="color:#a52a3b;">*</span>) menandakan kolom wajib diisi.</p>
+        </div>
+    </div>
 
-</html>
+    <form action="{{ route('materi.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        <div class="field">
+            <label for="judul">Judul Materi <span style="color:#a52a3b;">*</span></label>
+            <input
+                type="text"
+                id="judul"
+                name="judul"
+                value="{{ old('judul') }}"
+                placeholder="Masukkan judul materi"
+                required
+            >
+            @error('judul') <div class="error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="field">
+            <label for="id_mapel">Mata Pelajaran <span style="color:#a52a3b;">*</span></label>
+            <select id="id_mapel" name="id_mapel" required>
+                <option value="">-- Pilih Mata Pelajaran --</option>
+                @foreach ($mapel as $itemMapel)
+                    <option value="{{ $itemMapel->id_mapel }}" @selected(old('id_mapel', request('mapel')) === $itemMapel->id_mapel)>
+                        {{ $itemMapel->kode_mapel }} - {{ $itemMapel->nama_mapel }}
+                    </option>
+                @endforeach
+            </select>
+            @if ($mapel->isEmpty())
+                <p class="help">Belum ada mata pelajaran aktif. Hubungi admin sekolah.</p>
+            @endif
+            @error('id_mapel') <div class="error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="grid grid-2">
+            <div class="field">
+                <label for="bab">Bab</label>
+                <input
+                    type="text"
+                    id="bab"
+                    name="bab"
+                    value="{{ old('bab') }}"
+                    placeholder="Contoh: Bab 1"
+                >
+                @error('bab') <div class="error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="field">
+                <label for="kelas">Kelas</label>
+                <input
+                    type="text"
+                    id="kelas"
+                    name="kelas"
+                    value="{{ old('kelas') }}"
+                    placeholder="Contoh: X RPL 1"
+                >
+                @error('kelas') <div class="error">{{ $message }}</div> @enderror
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="deskripsi">Deskripsi</label>
+            <textarea
+                id="deskripsi"
+                name="deskripsi"
+                placeholder="Masukkan ringkasan atau deskripsi materi..."
+            >{{ old('deskripsi') }}</textarea>
+            @error('deskripsi') <div class="error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="field">
+            <label for="file_pdf">File PDF Materi</label>
+            <input
+                type="file"
+                id="file_pdf"
+                name="file_pdf"
+                accept=".pdf,application/pdf"
+            >
+            <p class="help">Unggah file PDF materi (maksimal 10 MB). Siswa dapat langsung membaca PDF ini di portal pembelajaran.</p>
+            @error('file_pdf') <div class="error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="field">
+            <label for="link_youtube">Link YouTube Video Pembelajaran</label>
+            <input
+                type="url"
+                id="link_youtube"
+                name="link_youtube"
+                value="{{ old('link_youtube') }}"
+                placeholder="https://www.youtube.com/watch?v=..."
+            >
+            <p class="help">Opsional: tautkan video YouTube untuk membantu penjelasan materi.</p>
+            @error('link_youtube') <div class="error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="form-actions actions">
+            <button type="submit" class="btn">
+                Simpan Materi
+            </button>
+            <a href="{{ route('materi.index') }}" class="btn btn-secondary">
+                Batal
+            </a>
+        </div>
+    </form>
+</section>
+
+@endsection

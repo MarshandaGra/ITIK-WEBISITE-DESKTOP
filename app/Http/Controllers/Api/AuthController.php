@@ -7,63 +7,66 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate([
+        $validated = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-            'device_name' => ['required', 'string', 'max:255'],
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $user = User::where('email', $validated['email'])->first();
 
-        if ($user === null || ! Hash::check($credentials['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Email atau password salah.',
-            ], Response::HTTP_UNAUTHORIZED);
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Email atau password salah.'],
+            ]);
         }
 
+        $token = $user->createToken('flutter-mobile');
+
         return response()->json([
-            'token' => $user->createToken($credentials['device_name'])->plainTextToken,
+            'message' => 'Login berhasil.',
             'token_type' => 'Bearer',
-            'user' => $user->only([
-                'id_user',
-                'nama_lengkap',
-                'nomor_induk',
-                'role',
-                'kelas',
-                'email',
-            ]),
+            'token' => $token->plainTextToken,
+            'user' => $this->userPayload($user),
         ]);
     }
 
-    public function user(Request $request): JsonResponse
+    public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user()->only([
-                'id_user',
-                'nama_lengkap',
-                'nomor_induk',
-                'role',
-                'kelas',
-                'email',
-            ]),
+            'data' => $this->userPayload($request->user()),
         ]);
     }
 
-    public function logout(Request $request): Response
+    public function logout(Request $request): JsonResponse
     {
-        $accessToken = $request->user()->currentAccessToken();
+        $token = $request->user()->currentAccessToken();
 
-        if ($accessToken instanceof PersonalAccessToken) {
-            $accessToken->delete();
-        }
+        abort_unless($token, 401, 'Token API tidak ditemukan.');
+        $token->delete();
 
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Logout berhasil.',
+        ]);
+    }
+
+    /**
+     * @return array{id_user: string, nomor_induk: ?string, nama_lengkap: string, role: string, kelas: ?string, email: ?string}
+     */
+    private function userPayload(User $user): array
+    {
+        return [
+            'id_user' => $user->id_user,
+            'nomor_induk' => $user->nomor_induk,
+            'nama_lengkap' => $user->nama_lengkap,
+            'role' => $user->role,
+            'kelas' => $user->kelas,
+            'email' => $user->email,
+        ];
     }
 }

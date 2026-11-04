@@ -4,46 +4,41 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kuis;
+use App\Models\Materi;
 use App\Models\Remedial;
-use Carbon\Carbon;
+use App\Models\Soal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class GuruKuisController extends Controller
 {
+    private const KATEGORI = ['post-test', 'pass-test', 'kuis harian', 'ulangan', 'remedial'];
+
     public function index(): JsonResponse
     {
-        $kuis = Kuis::query()
-            ->with('materi')
-            ->where('is_aktif', true)
-            ->orderByDesc('created_at')
-            ->paginate(15);
-
-        return response()->json([
-            'data' => $kuis->items(),
-            'meta' => [
-                'current_page' => $kuis->currentPage(),
-                'last_page' => $kuis->lastPage(),
-                'per_page' => $kuis->perPage(),
-                'total' => $kuis->total(),
-            ],
-        ]);
+        return response()->json(
+            Kuis::query()
+                ->where('is_aktif', true)
+                ->with(['pembuat:id_user,nama_lengkap', 'materi:id_materi,judul'])
+                ->latest('created_at')
+                ->paginate(20)
+        );
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $this->validatedKuis($request);
+        $materi = $validated['materi'] ?? [];
         $idKuisAsal = $validated['id_kuis_asal'] ?? null;
         unset($validated['materi'], $validated['id_kuis_asal']);
 
-        $kuis = DB::transaction(function () use ($validated, $request, $idKuisAsal) {
+        $kuis = DB::transaction(function () use ($validated, $materi, $idKuisAsal, $request): Kuis {
             $kuis = Kuis::create([
                 ...$validated,
-                'id_kuis' => $this->newKuisId(),
+                'id_kuis' => $this->nextKuisId(),
                 'id_user' => $request->user()->id_user,
                 'status_publikasi' => 'draft',
                 'id_publisher' => null,
@@ -55,68 +50,57 @@ class GuruKuisController extends Controller
                     'id_kuis_remedial' => $kuis->id_kuis,
                     'id_kuis_asal' => $idKuisAsal,
                 ]);
-            } elseif ($request->filled('materi')) {
-                $kuis->materi()->sync($request->input('materi'));
+            } elseif ($materi !== []) {
+                $kuis->materi()->sync($materi);
             }
 
             return $kuis;
         });
 
         return response()->json([
+            'message' => 'Kuis berhasil dibuat sebagai draft.',
             'data' => $kuis->load(['materi', 'soal']),
         ], 201);
     }
 
-    public function show(string $kuis): JsonResponse
+    public function show(Kuis $kuis): JsonResponse
     {
-        $kuis = Kuis::with(['materi', 'soal'])->findOrFail($kuis);
-
-        return response()->json(['data' => $kuis]);
+        return response()->json([
+            'data' => $kuis->load(['pembuat:id_user,nama_lengkap', 'materi', 'soal']),
+        ]);
     }
 
-    public function update(Request $request, string $kuis): JsonResponse
+    public function update(Request $request, Kuis $kuis): JsonResponse
     {
-        $kuis = Kuis::findOrFail($kuis);
+        abort_if($kuis->status_publikasi !== 'draft', 409, 'Kuis yang sudah terbit tidak dapat diedit.');
 
-        if ($kuis->status_publikasi === 'terbit') {
-            abort(409, 'Kuis yang sudah terbit tidak dapat diedit.');
-        }
-
-        $validated = $this->validatedKuis($request, $kuis);
+        $validated = $this->validatedKuis($request);
+        $materi = $validated['materi'] ?? [];
         $idKuisAsal = $validated['id_kuis_asal'] ?? null;
         unset($validated['materi'], $validated['id_kuis_asal']);
 
-        DB::transaction(function () use ($request, $validated, $kuis, $idKuisAsal): void {
-            if (
-                $kuis->status_publikasi === 'terjadwal' &&
-                empty($validated['waktu_publish'])
-            ) {
-                $validated['status_publikasi'] = 'draft';
-            }
-
+        DB::transaction(function () use ($kuis, $validated, $materi, $idKuisAsal): void {
             $kuis->update($validated);
 
             if ($kuis->kategori === 'remedial') {
-                if ($idKuisAsal !== null) {
-                    Remedial::updateOrCreate(
-                        ['id_kuis_remedial' => $kuis->id_kuis],
-                        ['id_kuis_asal' => $idKuisAsal],
-                    );
-                }
+                Remedial::updateOrCreate(
+                    ['id_kuis_remedial' => $kuis->id_kuis],
+                    ['id_kuis_asal' => $idKuisAsal]
+                );
             } else {
+                $kuis->materi()->sync($materi);
                 Remedial::where('id_kuis_remedial', $kuis->id_kuis)->delete();
-                $kuis->materi()->sync($request->input('materi', []));
             }
         });
 
         return response()->json([
-            'data' => $kuis->refresh()->load(['materi', 'soal']),
+            'message' => 'Kuis berhasil diperbarui.',
+            'data' => $kuis->fresh()->load(['materi', 'soal']),
         ]);
     }
 
-    public function destroy(string $kuis): JsonResponse
+    public function destroy(Kuis $kuis): JsonResponse
     {
-        $kuis = Kuis::findOrFail($kuis);
         $kuis->update(['is_aktif' => false]);
 
         return response()->json([
@@ -124,183 +108,185 @@ class GuruKuisController extends Controller
         ]);
     }
 
-    public function publish(Request $request, string $kuis): JsonResponse
+    public function publish(Request $request, Kuis $kuis): JsonResponse
     {
-        $kuis = Kuis::with('soal')->findOrFail($kuis);
+        abort_if($kuis->status_publikasi !== 'draft', 409, 'Kuis ini sudah terbit.');
+        abort_if(!$kuis->is_aktif, 409, 'Kuis yang sudah diarsipkan tidak dapat dipublikasikan.');
+
+        $soal = $kuis->soal()->orderBy('id_soal')->get();
         $errors = [];
 
-        if (! in_array($kuis->status_publikasi, ['draft', 'terjadwal'], true)) {
-            abort(409, 'Kuis ini sudah terbit dan tidak dapat dipublikasikan ulang.');
+        if (!$kuis->judul || !$kuis->kategori) {
+            $errors[] = 'Judul dan kategori kuis wajib diisi.';
         }
 
-        if (! $kuis->is_aktif) {
-            abort(409, 'Kuis yang sudah diarsipkan tidak dapat dipublikasikan.');
+        if (!$kuis->alokasi_waktu || $kuis->alokasi_waktu < 1) {
+            $errors[] = 'Alokasi waktu harus lebih dari 0 menit.';
         }
 
-        if (blank($kuis->judul)) {
-            $errors[] = 'Judul kuis wajib diisi.';
-        }
-        if (blank($kuis->kategori)) {
-            $errors[] = 'Kategori kuis wajib diisi.';
-        }
-        if (! $kuis->alokasi_waktu || $kuis->alokasi_waktu <= 0) {
-            $errors[] = 'Alokasi waktu kuis wajib diisi dan harus lebih dari 0 menit.';
-        }
         if ($kuis->kkm === null || $kuis->kkm < 0 || $kuis->kkm > 100) {
             $errors[] = 'KKM wajib diisi dengan nilai antara 0 sampai 100.';
         }
 
-        if ($kuis->kategori === 'ulangan') {
-            if ($kuis->waktu_mulai === null) {
-                $errors[] = 'Waktu mulai wajib diisi untuk kategori ulangan.';
-            }
-            if ($kuis->waktu_selesai === null) {
-                $errors[] = 'Waktu selesai wajib diisi untuk kategori ulangan.';
-            }
+        if ($kuis->kategori === 'ulangan' && (
+            !$kuis->waktu_mulai ||
+            !$kuis->waktu_selesai ||
+            $kuis->waktu_selesai->lessThanOrEqualTo($kuis->waktu_mulai)
+        )) {
+            $errors[] = 'Jadwal ulangan tidak valid.';
+        }
+
+        if ($soal->isEmpty()) {
+            $errors[] = 'Kuis harus memiliki minimal satu soal.';
+        }
+
+        foreach ($soal as $index => $item) {
+            $number = $index + 1;
+            $correctOption = 'opsi_'.strtolower($item->jawaban);
+
             if (
-                $kuis->waktu_mulai !== null &&
-                $kuis->waktu_selesai !== null &&
-                $kuis->waktu_selesai->lessThanOrEqualTo($kuis->waktu_mulai)
+                !$item->pertanyaan ||
+                !$item->opsi_a ||
+                !$item->opsi_b ||
+                !$item->opsi_c ||
+                !$item->opsi_d ||
+                !in_array($item->jawaban, ['A', 'B', 'C', 'D', 'E'], true) ||
+                !$item->$correctOption ||
+                $item->bobot === null ||
+                $item->bobot <= 0
             ) {
-                $errors[] = 'Waktu selesai harus lebih besar dari waktu mulai.';
+                $errors[] = "Data soal nomor {$number} belum lengkap.";
             }
         }
 
-        if ($kuis->soal->isEmpty()) {
-            $errors[] = 'Kuis belum memiliki soal. Tambahkan minimal 1 soal.';
-        }
+        $totalBobot = round((float) $soal->sum('bobot'), 2);
 
-        $totalBobot = 0.0;
-        foreach ($kuis->soal as $index => $soal) {
-            $nomor = $index + 1;
-            if (blank(trim($soal->pertanyaan))) {
-                $errors[] = "Soal nomor {$nomor}: pertanyaan wajib diisi.";
-            }
-            if ($soal->tipe_soal === 'essay') {
-                continue;
-            }
-
-            foreach (['a', 'b', 'c', 'd'] as $option) {
-                $field = 'opsi_'.$option;
-                if (blank(trim($soal->{$field} ?? '')) && blank($soal->{'gambar_'.$field})) {
-                    $errors[] = "Soal nomor {$nomor}: opsi ".strtoupper($option).' wajib diisi.';
-                }
-            }
-
-            $answer = strtoupper((string) $soal->jawaban);
-            if (! in_array($answer, ['A', 'B', 'C', 'D', 'E'], true)) {
-                $errors[] = "Soal nomor {$nomor}: jawaban benar wajib ditentukan.";
-            } else {
-                $field = 'opsi_'.strtolower($answer);
-                if (blank(trim($soal->{$field} ?? '')) && blank($soal->{'gambar_'.$field})) {
-                    $errors[] = "Soal nomor {$nomor}: jawaban {$answer} harus memiliki teks atau gambar.";
-                }
-            }
-
-            if ($soal->bobot === null || $soal->bobot <= 0) {
-                $errors[] = "Soal nomor {$nomor}: bobot harus lebih dari 0.";
-            } else {
-                $totalBobot += (float) $soal->bobot;
-            }
-        }
-
-        if (
-            $kuis->soal->where('tipe_soal', 'pilihan_ganda')->isNotEmpty() &&
-            round($totalBobot, 2) !== 100.0
-        ) {
-            $errors[] = 'Total bobot semua soal harus tepat 100. Total saat ini: '.
-                number_format($totalBobot, 2).'.';
+        if ($soal->isNotEmpty() && $totalBobot !== 100.0) {
+            $errors[] = 'Total bobot semua soal harus tepat 100.';
         }
 
         if ($errors !== []) {
-            throw ValidationException::withMessages(['publish' => $errors]);
+            throw ValidationException::withMessages([
+                'publish' => $errors,
+            ]);
         }
 
-        $waktuPublish = $kuis->waktu_publish;
-        $scheduled = $waktuPublish !== null && $waktuPublish->isFuture();
-
         $kuis->update([
-            'status_publikasi' => $scheduled ? 'terjadwal' : 'terbit',
+            'status_publikasi' => 'terbit',
             'id_publisher' => $request->user()->id_user,
         ]);
 
         return response()->json([
-            'data' => $kuis->refresh(),
+            'message' => 'Kuis berhasil dipublikasikan.',
+            'data' => $kuis->fresh(),
+        ]);
+    }
+
+    public function storeSoal(Request $request, Kuis $kuis): JsonResponse
+    {
+        $this->ensureDraft($kuis);
+        $validated = $this->validatedSoal($request);
+
+        $duplicate = $kuis->soal()->where('pertanyaan', $validated['pertanyaan'])->exists();
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'pertanyaan' => ['Pertanyaan tersebut sudah ada di kuis ini.'],
+            ]);
+        }
+
+        $this->ensureCorrectOption($validated);
+        $totalBobot = (float) $kuis->soal()->sum('bobot') + (float) $validated['bobot'];
+
+        if ($totalBobot > 100) {
+            throw ValidationException::withMessages([
+                'bobot' => ['Total bobot soal tidak boleh lebih dari 100.'],
+            ]);
+        }
+
+        $soal = $kuis->soal()->create([
+            ...$validated,
+            'id_soal' => $this->nextSoalId(),
+        ]);
+
+        return response()->json([
+            'message' => 'Soal berhasil ditambahkan.',
+            'data' => $soal,
+        ], 201);
+    }
+
+    public function updateSoal(Request $request, Kuis $kuis, Soal $soal): JsonResponse
+    {
+        $this->ensureSoalBelongsToKuis($kuis, $soal);
+        $this->ensureDraft($kuis);
+        $validated = $this->validatedSoal($request);
+
+        $duplicate = $kuis->soal()
+            ->where('pertanyaan', $validated['pertanyaan'])
+            ->where('id_soal', '!=', $soal->id_soal)
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'pertanyaan' => ['Pertanyaan tersebut sudah ada di kuis ini.'],
+            ]);
+        }
+
+        $this->ensureCorrectOption($validated);
+        $totalBobot = (float) $kuis->soal()->sum('bobot')
+            - (float) $soal->bobot
+            + (float) $validated['bobot'];
+
+        if ($totalBobot > 100) {
+            throw ValidationException::withMessages([
+                'bobot' => ['Total bobot soal tidak boleh lebih dari 100.'],
+            ]);
+        }
+
+        $soal->update($validated);
+
+        return response()->json([
+            'message' => 'Soal berhasil diperbarui.',
+            'data' => $soal->fresh(),
+        ]);
+    }
+
+    public function destroySoal(Kuis $kuis, Soal $soal): JsonResponse
+    {
+        $this->ensureSoalBelongsToKuis($kuis, $soal);
+        $this->ensureDraft($kuis);
+        $soal->delete();
+
+        return response()->json([
+            'message' => 'Soal berhasil dihapus.',
         ]);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function validatedKuis(Request $request, ?Kuis $kuis = null): array
+    private function validatedKuis(Request $request): array
     {
-        $judulRule = Rule::unique('kuis', 'judul');
-        if ($kuis !== null) {
-            $judulRule->ignore($kuis->id_kuis, 'id_kuis');
-        }
-
         $validated = $request->validate([
-            'judul' => ['required', 'string', 'max:150', $judulRule],
+            'judul' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'kategori' => ['required', Rule::in([
-                'pre-test', 'post-test', 'kuis harian', 'ulangan', 'remedial',
-            ])],
-            'tingkat_ujian' => ['sometimes', 'required', Rule::in(['mudah', 'sedang', 'sulit'])],
+            'kategori' => ['required', Rule::in(self::KATEGORI)],
             'alokasi_waktu' => ['nullable', 'integer', 'min:1', 'max:300'],
-            'kkm' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'maks_percobaan' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'waktu_publish' => ['nullable', 'date', 'after_or_equal:now'],
-            'waktu_mulai' => ['nullable', 'date'],
-            'waktu_selesai' => ['nullable', 'date'],
+            'kkm' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'waktu_mulai' => ['required_if:kategori,ulangan', 'nullable', 'date'],
+            'waktu_selesai' => ['required_if:kategori,ulangan', 'nullable', 'date'],
             'materi' => ['nullable', 'array'],
-            'materi.*' => ['exists:materis,id_materi'],
-            'id_kuis_asal' => ['nullable', 'required_if:kategori,remedial', 'exists:kuis,id_kuis'],
-        ], [
-            'judul.unique' => 'Judul kuis sudah digunakan.',
-            'waktu_publish.after_or_equal' => 'Jadwal publikasi tidak boleh sebelum tanggal dan waktu sekarang.',
+            'materi.*' => ['string', 'exists:materis,id_materi'],
+            'id_kuis_asal' => ['required_if:kategori,remedial', 'nullable', 'string', 'exists:kuis,id_kuis'],
         ]);
 
-        $validated['tingkat_ujian'] ??= $kuis?->tingkat_ujian ?? 'mudah';
-
-        if (
-            $validated['kategori'] !== 'remedial' &&
-            in_array($validated['tingkat_ujian'], ['sedang', 'sulit'], true) &&
-            empty($validated['materi'])
-        ) {
-            throw ValidationException::withMessages([
-                'materi' => 'Tingkat Sedang dan Sulit wajib dikaitkan dengan materi.',
-            ]);
-        }
-
-        if ($validated['kategori'] === 'remedial' && ! empty($validated['id_kuis_asal'])) {
-            $kuisAsal = Kuis::find($validated['id_kuis_asal']);
+        if ($validated['kategori'] === 'ulangan') {
             if (
-                $kuisAsal === null ||
-                ! $kuisAsal->is_aktif ||
-                $kuisAsal->kategori === 'remedial'
+                now()->greaterThan($validated['waktu_mulai']) ||
+                now()->greaterThanOrEqualTo($validated['waktu_selesai']) ||
+                $validated['waktu_selesai'] <= $validated['waktu_mulai']
             ) {
                 throw ValidationException::withMessages([
-                    'id_kuis_asal' => 'Pilih kuis asal yang aktif dan bukan kuis remedial.',
-                ]);
-            }
-        }
-
-        if ($validated['kategori'] === 'ulangan') {
-            if (empty($validated['waktu_mulai']) || empty($validated['waktu_selesai'])) {
-                throw ValidationException::withMessages([
-                    'waktu_mulai' => 'Waktu mulai dan waktu selesai wajib diisi untuk ulangan.',
-                ]);
-            }
-            $start = Carbon::parse($validated['waktu_mulai']);
-            $end = Carbon::parse($validated['waktu_selesai']);
-            if ($start->isPast()) {
-                throw ValidationException::withMessages([
-                    'waktu_mulai' => 'Waktu mulai ulangan tidak boleh sebelum waktu sekarang.',
-                ]);
-            }
-            if ($end->lessThanOrEqualTo($start)) {
-                throw ValidationException::withMessages([
-                    'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.',
+                    'waktu_selesai' => ['Jadwal ulangan tidak valid.'],
                 ]);
             }
         } else {
@@ -308,15 +294,83 @@ class GuruKuisController extends Controller
             $validated['waktu_selesai'] = null;
         }
 
+        if ($validated['kategori'] === 'remedial') {
+            $kuisAsal = Kuis::query()
+                ->where('id_kuis', $validated['id_kuis_asal'])
+                ->where('is_aktif', true)
+                ->where('status_publikasi', 'terbit')
+                ->where('kategori', '!=', 'remedial')
+                ->first();
+
+            if (!$kuisAsal) {
+                throw ValidationException::withMessages([
+                    'id_kuis_asal' => ['Kuis asal tidak valid untuk remedial.'],
+                ]);
+            }
+        }
+
         return $validated;
     }
 
-    private function newKuisId(): string
+    /**
+     * @return array<string, mixed>
+     */
+    private function validatedSoal(Request $request): array
     {
-        do {
-            $idKuis = 'K'.Str::upper(Str::random(10));
-        } while (Kuis::whereKey($idKuis)->exists());
+        return $request->validate([
+            'pertanyaan' => ['required', 'string'],
+            'opsi_a' => ['required', 'string', 'max:255'],
+            'opsi_b' => ['required', 'string', 'max:255'],
+            'opsi_c' => ['required', 'string', 'max:255'],
+            'opsi_d' => ['required', 'string', 'max:255'],
+            'opsi_e' => ['nullable', 'string', 'max:255'],
+            'jawaban' => ['required', Rule::in(['A', 'B', 'C', 'D', 'E'])],
+            'bobot' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'tingkat_kesulitan' => ['nullable', Rule::in(['mudah', 'sedang', 'sulit'])],
+        ]);
+    }
 
-        return $idKuis;
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function ensureCorrectOption(array $validated): void
+    {
+        $correctOption = 'opsi_'.strtolower($validated['jawaban']);
+
+        if (empty(trim($validated[$correctOption] ?? ''))) {
+            throw ValidationException::withMessages([
+                'jawaban' => ["Opsi {$validated['jawaban']} yang menjadi jawaban benar wajib diisi."],
+            ]);
+        }
+    }
+
+    private function ensureDraft(Kuis $kuis): void
+    {
+        abort_if($kuis->status_publikasi !== 'draft', 409, 'Kuis yang sudah terbit tidak dapat diubah.');
+    }
+
+    private function ensureSoalBelongsToKuis(Kuis $kuis, Soal $soal): void
+    {
+        abort_unless($soal->id_kuis === $kuis->id_kuis, 404);
+    }
+
+    private function nextKuisId(): string
+    {
+        $number = Kuis::query()
+            ->pluck('id_kuis')
+            ->map(fn (string $id): int => (int) preg_replace('/^K/', '', $id))
+            ->max() ?? 0;
+
+        return 'K'.str_pad((string) ($number + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    private function nextSoalId(): string
+    {
+        $number = Soal::query()
+            ->pluck('id_soal')
+            ->map(fn (string $id): int => (int) preg_replace('/^S/', '', $id))
+            ->max() ?? 0;
+
+        return 'S'.str_pad((string) ($number + 1), 3, '0', STR_PAD_LEFT);
     }
 }

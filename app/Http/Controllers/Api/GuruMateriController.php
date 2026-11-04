@@ -6,121 +6,104 @@ use App\Http\Controllers\Controller;
 use App\Models\Materi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class GuruMateriController extends Controller
 {
     public function index(): JsonResponse
     {
-        $materi = Materi::query()
-            ->orderByDesc('created_at')
-            ->paginate(15);
-
-        return response()->json([
-            'data' => $materi->getCollection()
-                ->map(fn (Materi $item): array => $this->materiData($item))
-                ->values(),
-            'meta' => [
-                'current_page' => $materi->currentPage(),
-                'last_page' => $materi->lastPage(),
-                'per_page' => $materi->perPage(),
-                'total' => $materi->total(),
-            ],
-        ]);
+        return response()->json(
+            Materi::query()->with('user:id_user,nama_lengkap')->latest()->paginate(20)
+        );
     }
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $this->validatedMateri($request);
-        $validated['id_materi'] = $this->newMateriId();
-        $validated['id_user'] = $request->user()->id_user;
-
-        $materi = Materi::create($validated);
-
-        return response()->json([
-            'data' => $this->materiData($materi),
-        ], 201);
-    }
-
-    public function show(string $materi): JsonResponse
-    {
-        $materi = Materi::findOrFail($materi);
-
-        return response()->json([
-            'data' => $this->materiData($materi),
-        ]);
-    }
-
-    public function update(Request $request, string $materi): JsonResponse
-    {
-        $materi = Materi::findOrFail($materi);
-        $materi->update($this->validatedMateri($request, $materi));
-
-        return response()->json([
-            'data' => $this->materiData($materi->refresh()),
-        ]);
-    }
-
-    public function destroy(string $materi): Response
-    {
-        $materi = Materi::findOrFail($materi);
-
-        if (! $materi->delete()) {
-            throw new \RuntimeException('Materi could not be deleted.');
-        }
-
-        return response()->noContent();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validatedMateri(Request $request, ?Materi $materi = null): array
-    {
-        $judulRule = Rule::unique('materis', 'judul');
-
-        if ($materi !== null) {
-            $judulRule->ignore($materi->id_materi, 'id_materi');
-        }
-
-        return $request->validate([
-            'judul' => ['required', 'string', 'max:150', $judulRule],
+        $validated = $request->validate([
+            'judul' => ['required', 'string', 'max:150'],
             'bab' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:50'],
             'deskripsi' => ['nullable', 'string'],
             'isi_materi' => ['nullable', 'string', 'max:255'],
             'link_youtube' => ['nullable', 'url', 'max:255'],
         ]);
+
+        $this->ensureUniqueMateri($validated);
+
+        $validated['id_materi'] = $this->nextId();
+        $validated['id_user'] = $request->user()->id_user;
+        $materi = Materi::create($validated);
+
+        return response()->json([
+            'message' => 'Materi berhasil ditambahkan.',
+            'data' => $materi,
+        ], 201);
     }
 
-    private function newMateriId(): string
+    public function show(Materi $materi): JsonResponse
     {
-        do {
-            $idMateri = 'M'.Str::upper(Str::random(10));
-        } while (Materi::whereKey($idMateri)->exists());
+        return response()->json([
+            'data' => $materi->load('user:id_user,nama_lengkap'),
+        ]);
+    }
 
-        return $idMateri;
+    public function update(Request $request, Materi $materi): JsonResponse
+    {
+        $validated = $request->validate([
+            'judul' => ['required', 'string', 'max:150'],
+            'bab' => ['nullable', 'string', 'max:50'],
+            'kelas' => ['nullable', 'string', 'max:50'],
+            'deskripsi' => ['nullable', 'string'],
+            'isi_materi' => ['nullable', 'string', 'max:255'],
+            'link_youtube' => ['nullable', 'url', 'max:255'],
+        ]);
+
+        $this->ensureUniqueMateri($validated, $materi);
+        $materi->update($validated);
+
+        return response()->json([
+            'message' => 'Materi berhasil diperbarui.',
+            'data' => $materi->fresh(),
+        ]);
+    }
+
+    public function destroy(Materi $materi): JsonResponse
+    {
+        $materi->delete();
+
+        return response()->json([
+            'message' => 'Materi berhasil dihapus.',
+        ]);
     }
 
     /**
-     * @return array<string, mixed>
+     * @param  array<string, mixed>  $data
      */
-    private function materiData(Materi $materi): array
+    private function ensureUniqueMateri(array $data, ?Materi $materi = null): void
     {
-        return [
-            'id_materi' => $materi->id_materi,
-            'judul' => $materi->judul,
-            'bab' => $materi->bab,
-            'kelas' => $materi->kelas,
-            'deskripsi' => $materi->deskripsi,
-            'isi_materi' => $materi->isi_materi,
-            'file_url' => $materi->isi_materi === null ? null : asset($materi->isi_materi),
-            'link_youtube' => $materi->link_youtube,
-            'id_user' => $materi->id_user,
-            'created_at' => $materi->created_at,
-            'updated_at' => $materi->updated_at,
-        ];
+        $query = Materi::query()
+            ->where('judul', $data['judul'])
+            ->where('kelas', $data['kelas'] ?? null)
+            ->where('bab', $data['bab'] ?? null);
+
+        if ($materi) {
+            $query->where('id_materi', '!=', $materi->id_materi);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'judul' => ['Materi dengan kelas, bab, dan judul tersebut sudah ada.'],
+            ]);
+        }
+    }
+
+    private function nextId(): string
+    {
+        $number = Materi::query()
+            ->pluck('id_materi')
+            ->map(fn (string $id): int => (int) preg_replace('/^M/', '', $id))
+            ->max() ?? 0;
+
+        return 'M'.str_pad((string) ($number + 1), 3, '0', STR_PAD_LEFT);
     }
 }

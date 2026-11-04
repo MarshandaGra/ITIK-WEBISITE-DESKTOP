@@ -21,13 +21,13 @@ class Kuis extends Model
         'judul',
         'deskripsi',
         'kategori',
-        'tingkat_ujian',
+        'tingkat_kesulitan',
+        'id_mapel',
+        'id_tahun_ajaran',
         'alokasi_waktu',
         'kkm',
-        'maks_percobaan',
         'waktu_mulai',
         'waktu_selesai',
-        'waktu_publish',
         'id_user',
         'status_publikasi',
         'id_publisher',
@@ -37,15 +37,23 @@ class Kuis extends Model
     protected $casts = [
         'waktu_mulai' => 'datetime',
         'waktu_selesai' => 'datetime',
-        'waktu_publish' => 'datetime',
         'is_aktif' => 'boolean',
-        'kkm' => 'integer',
-        'maks_percobaan' => 'integer',
+        'kkm' => 'decimal:2',
     ];
 
     public function pembuat()
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
+    }
+
+    public function mapel()
+    {
+        return $this->belongsTo(Mapel::class, 'id_mapel', 'id_mapel');
+    }
+
+    public function tahunAjaran()
+    {
+        return $this->belongsTo(TahunAjaran::class, 'id_tahun_ajaran', 'id_tahun_ajaran');
     }
 
     public function publisher()
@@ -71,52 +79,54 @@ class Kuis extends Model
 
     public function sesi()
     {
-        return $this->hasMany(SesiKuis::class, 'id_kuis', 'id_kuis');
+        return $this->hasMany(SesiKuis::class,'id_kuis','id_kuis');
     }
 
     public function remedial()
     {
-        return $this->hasOne(Remedial::class, 'id_kuis_remedial', 'id_kuis');
+        return $this->hasOne(Remedial::class,'id_kuis_remedial','id_kuis');
     }
 
     public function remedialSebagaiAsal()
     {
-        return $this->hasMany(Remedial::class, 'id_kuis_asal', 'id_kuis');
+        return $this->hasMany(Remedial::class,'id_kuis_asal','id_kuis');
     }
 
     public function remedialSiswa()
     {
-        return $this->hasMany(RemedialSiswa::class, 'id_kuis_remedial', 'id_kuis');
+        return $this->hasMany(RemedialSiswa::class,'id_kuis_remedial','id_kuis');
     }
 
-    public function getKategoriLabelAttribute(): string
+    /**
+     * Sinkronisasi status publikasi kuis secara otomatis:
+     * - Terbit otomatis jika waktu_mulai sudah tiba (<= now)
+     * - Kembali ke draft otomatis jika waktu_selesai sudah lewat (<= now)
+     */
+    public static function sinkronisasiStatus(?\Carbon\Carbon $now = null): void
     {
-        return match ($this->kategori) {
-            'pre-test' => 'Pre-test',
-            'post-test' => 'Post-test',
-            'kuis harian' => 'Kuis Harian',
-            'ulangan' => 'Ulangan',
-            'remedial' => 'Remedial',
-            default => ucfirst($this->kategori),
-        };
-    }
+        $now = $now ?? \Carbon\Carbon::now();
 
-    public function getTingkatUjianLabelAttribute(): string
-    {
-        return match ($this->tingkat_ujian) {
-            'mudah' => 'Mudah',
-            'sedang' => 'Sedang',
-            'sulit' => 'Sulit',
-            default => 'Belum ditentukan',
-        };
-    }
+        // 1. Auto terbit: draft, waktu_mulai <= now, dan (waktu_selesai is null atau waktu_selesai > now)
+        static::where('status_publikasi', 'draft')
+            ->whereNotNull('waktu_mulai')
+            ->where('waktu_mulai', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('waktu_selesai')
+                  ->orWhere('waktu_selesai', '>', $now);
+            })
+            ->where('is_aktif', true)
+            ->update([
+                'status_publikasi' => 'terbit',
+            ]);
 
-    public function getTingkatSebelumnyaLabelAttribute(): ?string
-    {
-        return match ($this->tingkat_ujian) {
-            'sedang' => 'Mudah',
-            'sulit' => 'Sedang',
-            default => null,
-        };
+        // 2. Auto draft: terbit, waktu_selesai <= now
+        static::where('status_publikasi', 'terbit')
+            ->whereNotNull('waktu_selesai')
+            ->where('waktu_selesai', '<=', $now)
+            ->where('is_aktif', true)
+            ->update([
+                'status_publikasi' => 'draft',
+                'id_publisher'     => null,
+            ]);
     }
 }

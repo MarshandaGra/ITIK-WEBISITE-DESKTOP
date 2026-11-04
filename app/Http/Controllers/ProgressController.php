@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Mapel;
 use App\Models\Materi;
 use App\Models\Progress;
 use Illuminate\Http\Request;
@@ -10,19 +11,39 @@ use Illuminate\Support\Str;
 
 class ProgressController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $idMapel = $request->query('mapel');
 
-        $materi = Materi::with([
-            'progress' => function ($query) use ($user) {
-                $query->where('id_user', $user->id_user);
+        $mapelAktif = Mapel::aktif()
+            ->withCount('materi')
+            ->orderBy('nama_mapel')
+            ->get();
+
+        $mapelTerpilih = null;
+        $materi = collect();
+
+        if ($idMapel) {
+            $mapelTerpilih = Mapel::find($idMapel);
+            if ($mapelTerpilih) {
+                $query = Materi::where('id_mapel', $idMapel);
+
+                if (\Illuminate\Support\Facades\Schema::hasTable('progress')) {
+                    $query->with([
+                        'progress' => function ($q) use ($user) {
+                            $q->where('id_user', $user->id_user);
+                        }
+                    ]);
+                }
+
+                $materi = $query->orderBy('bab')
+                    ->orderBy('judul')
+                    ->get();
             }
-        ])
-        ->orderBy('id_materi')
-        ->get();
+        }
 
-        return view('siswa.materi.index', compact('materi'));
+        return view('siswa.materi.index', compact('mapelAktif', 'mapelTerpilih', 'materi', 'idMapel'));
     }
     /**
      * Menampilkan materi untuk siswa.

@@ -21,7 +21,6 @@ class DraftJawaban extends Model
         'id_user',
         'id_soal',
         'jawaban_dipilih',
-        'jawaban_text',
         'updated_at',
     ];
 
@@ -31,16 +30,16 @@ class DraftJawaban extends Model
 
     public function kuis()
     {
-        return $this->belongsTo(Kuis::class, 'id_kuis', 'id_kuis');
+        return $this->belongsTo(Kuis::class,'id_kuis','id_kuis');
     }
 
     public function soal()
     {
-        return $this->belongsTo(Soal::class, 'id_soal', 'id_soal');
+        return $this->belongsTo(Soal::class,'id_soal','id_soal');
     }
 
     public function siswa()
     {
-        return $this->belongsTo(User::class, 'id_user', 'id_user');
+        return $this->belongsTo(User::class,'id_user','id_user');
     }
 }

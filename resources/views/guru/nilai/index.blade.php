@@ -1,709 +1,781 @@
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Validasi Nilai - ITIK</title>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f4fc;
-            color: #202044;
-            min-height: 100vh;
-            display: flex;
-        }
-
-        /* SIDEBAR */
-
-        .sidebar {
-            width: 270px;
-            background: linear-gradient(180deg, #7160ef, #5948dd);
-            color: white;
-            padding: 30px 25px;
-            flex-shrink: 0;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 60px;
-        }
-
-        .logo-icon {
-            width: 55px;
-            height: 55px;
-            border: 1px solid rgba(255,255,255,.4);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .logo h2 {
-            font-size: 22px;
-        }
-
-        .logo span {
-            font-size: 14px;
-            opacity: .85;
-        }
-
-        .menu-title {
-            font-size: 14px;
-            opacity: .7;
-            margin-bottom: 15px;
-        }
-
-        .menu a {
-            display: block;
-            text-decoration: none;
-            color: white;
-            padding: 15px 18px;
-            border-radius: 15px;
-            margin-bottom: 8px;
-            font-size: 17px;
-        }
-
-        .menu a.active {
-            background: white;
-            color: #5b4ae3;
-        }
-
-        .menu a:hover {
-            background: rgba(255,255,255,.15);
-        }
-
-        /* CONTENT */
-
-        .content {
-            flex: 1;
-            padding: 30px 45px;
-            min-width: 0;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 35px;
-        }
-
-        .title h1 {
-            font-size: 34px;
-            margin-bottom: 5px;
-        }
-
-        .title p {
-            color: #777394;
-            font-size: 17px;
-        }
-
-        .profile-mini {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: white;
-            padding: 10px 18px;
-            border-radius: 40px;
-            box-shadow: 0 3px 15px rgba(0,0,0,.04);
-        }
-
-        .avatar-small {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: #6553e8;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .profile-mini small {
-            color: #777394;
-        }
-
-        /* ALERT */
-
-        .alert {
-            padding: 15px 18px;
-            border-radius: 13px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .alert-success {
-            background: #e8f8ef;
-            color: #188650;
-            border: 1px solid #c9ecd9;
-        }
-
-        .alert-error {
-            background: #fff0f0;
-            color: #d64545;
-            border: 1px solid #ffd0d0;
-        }
-
-        /* CARD */
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: 0 4px 18px rgba(70,60,130,.06);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .card-header h2 {
-            font-size: 22px;
-        }
-
-        .card-header p {
-            color: #777394;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        /* TABLE */
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1050px;
-        }
-
-        thead th {
-            background: #f7f6ff;
-            color: #5b5875;
-            font-size: 13px;
-            font-weight: bold;
-            text-align: left;
-            padding: 15px 14px;
-            border-bottom: 1px solid #eeeef5;
-            white-space: nowrap;
-        }
-
-        tbody td {
-            padding: 16px 14px;
-            border-bottom: 1px solid #f0eff6;
-            font-size: 14px;
-            color: #55526b;
-            vertical-align: middle;
-        }
-
-        tbody tr:hover {
-            background: #faf9ff;
-        }
-
-        .student-name {
-            color: #29274a;
-            font-weight: bold;
-        }
-
-        .quiz-name {
-            color: #5b4ae3;
-            font-weight: 600;
-        }
-
-        .category {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 20px;
-            background: #eeeaff;
-            color: #5b4ae3;
-            font-size: 11px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .category.remedial {
-            background: #fff4d6;
-            color: #a97900;
-        }
-
-        .score {
-            color: #29274a;
-            font-size: 16px;
-        }
-
-        .pass {
-            color: #188650;
-            font-weight: bold;
-        }
-
-        .fail {
-            color: #d64545;
-            font-weight: bold;
-        }
-
-        .waiting {
-            color: #a97900;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .validated {
-            color: #188650;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .btn-view {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 9px 13px;
-            border-radius: 10px;
-            background: #eeeaff;
-            color: #5b4ae3;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .btn-view:hover {
-            background: #e2ddff;
-        }
-
-        /* EMPTY */
-
-        .empty-card {
-            background: white;
-            border-radius: 20px;
-            padding: 55px 30px;
-            text-align: center;
-            box-shadow: 0 4px 18px rgba(70,60,130,.06);
-        }
-
-        .empty-icon {
-            width: 65px;
-            height: 65px;
-            border-radius: 18px;
-            background: #eeeaff;
-            color: #6553e8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 18px;
-            font-size: 28px;
-        }
-
-        .empty-card h3 {
-            margin-bottom: 8px;
-        }
-
-        .empty-card p {
-            color: #9996aa;
-        }
-
-        /* RESPONSIVE */
-
-        @media(max-width:900px) {
-            .sidebar {
-                display: none;
-            }
-
-            .content {
-                padding: 25px;
-            }
-        }
-
-        @media(max-width:700px) {
-            .profile-mini {
-                display: none;
-            }
-
-            .topbar {
-                margin-bottom: 25px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-        }
-
-        @media(max-width:500px) {
-            .content {
-                padding: 20px 15px;
-            }
-
-            .title h1 {
-                font-size: 28px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    {{-- SIDEBAR --}}
-
-    <aside class="sidebar">
-
-        <div class="logo">
-
-            <div class="logo-icon">
-                IT
-            </div>
-
-            <div>
-                <h2>ITIK</h2>
-                <span>Portal Guru</span>
-            </div>
-
+@extends('layouts.guru')
+@section('title', 'Daftar Nilai Siswa')
+
+@push('styles')
+<style>
+    /* FILTER SECTION DENGAN GAYA CHIPS SEPERTI WHATSAPP */
+    .filter-section {
+        background: white;
+        border-radius: 16px;
+        padding: 18px 22px;
+        margin-bottom: 22px;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px #29263d03;
+    }
+    .filter-header-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: var(--muted);
+        margin-bottom: 12px;
+    }
+    .filter-pills-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .pill-item {
+        position: relative;
+    }
+    .pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: 24px;
+        background: #f6f5fc;
+        border: 1.5px solid #ded9f7;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .2s ease;
+        user-select: none;
+    }
+    .pill-btn:hover {
+        background: var(--purple-light);
+        border-color: #b8aaff;
+    }
+    .pill-btn.active {
+        background: var(--purple);
+        color: white;
+        border-color: var(--purple);
+    }
+    .pill-btn.active .caret {
+        color: white;
+    }
+    .pill-btn .caret {
+        font-size: 9px;
+        color: var(--muted);
+        transition: transform .2s ease;
+    }
+    .pill-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        background: white;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 35px rgba(41, 38, 61, .12);
+        z-index: 100;
+        min-width: 220px;
+        padding: 6px;
+    }
+    .pill-dropdown.show {
+        display: block;
+    }
+    .pill-dropdown-item {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--ink);
+        transition: background .15s ease;
+    }
+    .pill-dropdown-item:hover {
+        background: var(--purple-light);
+        color: var(--purple);
+    }
+    .pill-dropdown-item.selected {
+        background: var(--purple-light);
+        color: var(--purple);
+        font-weight: 700;
+    }
+    .pill-input-form {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: white;
+        border: 1.5px solid var(--purple);
+        border-radius: 24px;
+        padding: 4px 10px;
+        box-shadow: 0 4px 15px rgba(92, 75, 224, .15);
+    }
+    .pill-input-form.show {
+        display: inline-flex;
+    }
+    .pill-input-form input {
+        border: none;
+        outline: none;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 4px 8px;
+        width: 110px;
+        min-height: auto;
+    }
+    .pill-input-form button {
+        border: none;
+        background: var(--purple);
+        color: white;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+    }
+    .btn-pill-reset {
+        background: #fff0f2 !important;
+        border-color: #efc0c8 !important;
+        color: #96293b !important;
+    }
+    .badge-category {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: capitalize;
+    }
+    .badge-category.ulangan { background: #fee2e2; color: #991b1b; }
+    .badge-category.remedial { background: #fef3c7; color: #92400e; }
+    .badge-category.kuis-harian, .badge-category[class*="kuis"] { background: #e0e7ff; color: #3730a3; }
+    .badge-category.pre-test, .badge-category.post-test { background: #dcfce7; color: #166534; }
+    .score.pass { color: #166534; font-weight: 700; }
+    .score.fail { color: #991b1b; font-weight: 700; }
+    .pass { color: #166534; font-weight: 600; font-size: 12px; }
+    .fail { color: #991b1b; font-weight: 600; font-size: 12px; }
+    .btn-action-remedial {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f59e0b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .2s ease;
+    }
+    .btn-action-remedial:hover {
+        background: #d97706;
+    }
+    .badge-remedial-done {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    /* KELAS CARDS GURU */
+    .kelas-section {
+        margin-bottom: 24px;
+    }
+    .kelas-grid-guru {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    .kelas-card-guru {
+        background: white;
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        padding: 18px 20px;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 18px #29263d04;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .kelas-card-guru:hover {
+        transform: translateY(-2px);
+        border-color: var(--purple);
+        box-shadow: 0 8px 25px rgba(85,66,220,.1);
+        text-decoration: none;
+    }
+    .kelas-card-guru.active {
+        border-color: var(--purple);
+        background: #fbfafd;
+        box-shadow: 0 0 0 2px var(--purple);
+    }
+    .kelas-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .kelas-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+    }
+    .kelas-stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .kelas-stat-box {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 8px 10px;
+    }
+    .kelas-stat-box .label {
+        font-size: 11px;
+        color: var(--muted);
+        display: block;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .kelas-stat-box .value {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--ink);
+    }
+    .kelas-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--purple);
+    }
+    .banner-kelas-active {
+        background: linear-gradient(135deg, #ede9fc 0%, #f6f5fc 100%);
+        border: 1px solid #d0c8ed;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+</style>
+@endpush
+
+@section('content')
+
+<div class="page-heading">
+    <div>
+        <h1>Daftar Nilai Siswa</h1>
+        <p>Pantau hasil pengerjaan kuis siswa per kelas dan berikan tugas remedial bagi yang belum lulus ulangan.</p>
+    </div>
+</div>
+
+{{-- LEVEL 1: KELOMPOK KELAS GURU --}}
+@if(isset($kelasList) && $kelasList->isNotEmpty())
+    <div class="kelas-section">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 12px;">
+            🏫 Pilih Kelas Pembelajaran
         </div>
-
-        <div class="menu-title">
-            Menu Utama
-        </div>
-
-        <nav class="menu">
-
-            <a href="{{ route('dashboard') }}"
-               class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                ▦ &nbsp; Dashboard
-            </a>
-
-            <a href="{{ route('materi.index') }}"
-               class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">
-                ▣ &nbsp; Materi
-            </a>
-
-            <a href="{{ route('kuis.index') }}"
-               class="{{ request()->routeIs('kuis.*') ? 'active' : '' }}">
-                ☑ &nbsp; Kuis & Soal
-            </a>
-
-            <a href="{{ route('guru.nilai.index') }}"
-               class="{{ request()->routeIs('guru.nilai.*') ? 'active' : '' }}">
-                ◉ &nbsp; Nilai
-            </a>
-
-            <a href="{{ route('profil') }}"
-               class="{{ request()->routeIs('profil') ? 'active' : '' }}">
-                ◎ &nbsp; Profil
-            </a>
-
-        </nav>
-
-    </aside>
-
-
-    {{-- CONTENT --}}
-
-    <main class="content">
-
-        <div class="topbar">
-
-            <div class="title">
-
-                <h1>Validasi Nilai Siswa</h1>
-
-                <p>
-                    Kelola dan validasi hasil kuis siswa
-                </p>
-
-            </div>
-
-
-            <div class="profile-mini">
-
-                <div class="avatar-small">
-
-                    {{ strtoupper(substr(Auth::user()->nama_lengkap, 0, 2)) }}
-
-                </div>
-
-                <div>
-
-                    <strong>
-                        {{ Auth::user()->nama_lengkap }}
-                    </strong>
-
-                    <br>
-
-                    <small>
-                        {{ ucfirst(Auth::user()->role) }}
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- ALERT SUCCESS --}}
-
-        @if(session('success'))
-
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-
-        @endif
-
-
-        {{-- ALERT ERROR --}}
-
-        @if(session('error'))
-
-            <div class="alert alert-error">
-                {{ session('error') }}
-            </div>
-
-        @endif
-
-
-        @if($hasil->isEmpty())
-
-            <div class="empty-card">
-
-                <div class="empty-icon">
-                    ◉
-                </div>
-
-                <h3>Belum Ada Hasil Kuis</h3>
-
-                <p>
-                    Belum ada hasil kuis siswa yang dapat divalidasi.
-                </p>
-
-            </div>
-
-        @else
-
-            <div class="card">
-
-                <div class="card-header">
-
+        <div class="kelas-grid-guru">
+            @foreach($kelasList as $k)
+                @php
+                    $isActive = ($idKelas === $k->id_kelas);
+                @endphp
+                <a href="{{ $isActive ? route('guru.nilai.index') : route('guru.nilai.index', ['kelas' => $k->id_kelas]) }}"
+                   class="kelas-card-guru {{ $isActive ? 'active' : '' }}">
                     <div>
-
-                        <h2>
-                            Hasil Kuis Siswa
-                        </h2>
-
-                        <p>
-                            Daftar hasil pengerjaan kuis siswa
-                        </p>
-
+                        <div class="kelas-card-header">
+                            <h3 class="kelas-card-title">{{ $k->nama_kelas }}</h3>
+                            <span class="badge {{ $isActive ? 'badge-primary' : 'badge-muted' }}">
+                                Tingkat {{ $k->tingkat }}
+                            </span>
+                        </div>
+                        <div class="kelas-stat-grid">
+                            <div class="kelas-stat-box">
+                                <span class="label">👥 Siswa</span>
+                                <span class="value">{{ $k->total_siswa }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📖 Materi</span>
+                                <span class="value">{{ $k->total_materi }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📝 Kuis Aktif</span>
+                                <span class="value">{{ $k->kuis_aktif }}</span>
+                            </div>
+                            <div class="kelas-stat-box">
+                                <span class="label">📊 Rata Nilai</span>
+                                <span class="value" style="color: {{ $k->rata_nilai && $k->rata_nilai >= 75 ? '#166534' : '#92400e' }};">
+                                    {{ $k->rata_nilai !== null ? $k->rata_nilai : '-' }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-
-                </div>
-
-
-                <div class="table-wrapper">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-
-                                <th>No</th>
-
-                                <th>Siswa</th>
-
-                                <th>Kuis</th>
-
-                                <th>Kategori</th>
-
-                                <th>Percobaan</th>
-
-                                <th>Nilai</th>
-
-                                <th>KKM</th>
-
-                                <th>Kelulusan</th>
-
-                                <th>Validasi</th>
-
-                                <th>Tanggal</th>
-
-                                <th>Aksi</th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            @foreach($hasil as $item)
-
-                                <tr>
-
-                                    <td>
-                                        {{ $loop->iteration }}
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="student-name">
-                                            {{ $item->siswa->nama_lengkap ?? '-' }}
-                                        </span>
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="quiz-name">
-                                            {{ $item->kuis->judul ?? '-' }}
-                                        </span>
-
-                                    </td>
-
-
-                                    <td>
-
-                                        @if($item->kuis->kategori === 'remedial')
-
-                                            <span class="category remedial">
-                                                Remedial
-                                            </span>
-
-                                        @else
-
-                                            <span class="category">
-                                                {{ $item->kuis->kategori ?? '-' }}
-                                            </span>
-
-                                        @endif
-
-                                    </td>
-
-
-                                    <td>
-                                        {{ $item->percobaan_ke }}
-                                    </td>
-
-
-                                    <td>
-
-                                        <strong class="score">
-                                            {{ $item->nilai ?? '-' }}
-                                        </strong>
-
-                                    </td>
-
-
-                                    <td>
-                                        {{ $item->kuis->kkm ?? '-' }}
-                                    </td>
-
-
-                                    <td>
-
-                                        @if($item->nilai === null)
-
-                                            -
-
-                                        @elseif(
-                                            $item->kuis->kkm !== null &&
-                                            $item->nilai >= $item->kuis->kkm
-                                        )
-
-                                            <span class="pass">
-                                                Lulus
-                                            </span>
-
-                                        @else
-
-                                            <span class="fail">
-                                                Tidak Lulus
-                                            </span>
-
-                                        @endif
-
-                                    </td>
-
-
-                                    <td>
-
-                                        @if($item->status_validasi === 'belum divalidasi')
-
-                                            <span class="waiting">
-                                                Menunggu Validasi
-                                            </span>
-
-                                        @elseif($item->status_validasi === 'sudah divalidasi')
-
-                                            <span class="validated">
-                                                Sudah Divalidasi
-                                            </span>
-
-                                        @else
-
-                                            {{ $item->status_validasi ?? '-' }}
-
-                                        @endif
-
-                                    </td>
-
-
-                                    <td>
-                                        {{ $item->tanggal ?? '-' }}
-                                    </td>
-
-
-                                    <td>
-
-                                        <a
-                                            href="{{ route(
-                                                'guru.nilai.show',
-                                                $item->id_mengerjakan
-                                            ) }}"
-                                            class="btn-view"
-                                        >
-                                            Lihat Detail
-                                        </a>
-
-                                    </td>
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                    <div class="kelas-card-footer">
+                        <span>{{ $isActive ? '✓ Sedang Dilihat' : 'Buka Nilai Kelas' }}</span>
+                        <span>{{ $isActive ? '✕' : '→' }}</span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+@if($kelasTerpilih)
+    <div class="banner-kelas-active">
+        <div>
+            <strong style="color: var(--purple); font-size: 15px;">
+                📂 Menampilkan Data Nilai: Kelas {{ $kelasTerpilih->nama_kelas }}
+            </strong>
+            <span class="muted small" style="margin-left: 8px;">
+                ({{ $kelasTerpilih->total_siswa }} Siswa &bull; Rata-rata Nilai: {{ $kelasTerpilih->rata_nilai ?? '-' }})
+            </span>
+        </div>
+        <a href="{{ route('guru.nilai.index') }}" class="btn btn-secondary btn-small">
+            ✕ Tampilkan Semua Kelas
+        </a>
+    </div>
+@endif
+
+<!-- WHATSAPP-LIKE FILTER PILLS BAR -->
+<div class="filter-section">
+    <div class="filter-header-label">
+        <span>⚡ Klasifikasi &amp; Filter Cepat</span>
+    </div>
+
+    <div class="filter-pills-bar">
+
+        <!-- 1. CHIP KATEGORI (DROPDOWN) -->
+        <div class="pill-item">
+            <div class="pill-btn" id="btn-chip-kategori" onclick="toggleDropdown('dropdown-kategori')">
+                <span>🏷️ Kategori:</span>
+                <strong id="label-kategori">{{ $kategori ? ucfirst($kategori) : 'Semua' }}</strong>
+                <span class="caret">▼</span>
             </div>
+            <div class="pill-dropdown" id="dropdown-kategori">
+                <div class="pill-dropdown-item {{ !$kategori ? 'selected' : '' }}" onclick="applyFilter('kategori', '')">
+                    Semua Kategori
+                </div>
+                <div class="pill-dropdown-item {{ strtolower($kategori) === 'ulangan' ? 'selected' : '' }}" onclick="applyFilter('kategori', 'ulangan')">
+                    Ulangan
+                </div>
+                <div class="pill-dropdown-item {{ strtolower($kategori) === 'kuis harian' ? 'selected' : '' }}" onclick="applyFilter('kategori', 'kuis harian')">
+                    Kuis Harian
+                </div>
+                <div class="pill-dropdown-item {{ strtolower($kategori) === 'pre-test' ? 'selected' : '' }}" onclick="applyFilter('kategori', 'pre-test')">
+                    Pre-test
+                </div>
+                <div class="pill-dropdown-item {{ strtolower($kategori) === 'post-test' ? 'selected' : '' }}" onclick="applyFilter('kategori', 'post-test')">
+                    Post-test
+                </div>
+                <div class="pill-dropdown-item {{ strtolower($kategori) === 'remedial' ? 'selected' : '' }}" onclick="applyFilter('kategori', 'remedial')">
+                    Remedial
+                </div>
+            </div>
+        </div>
 
+        <!-- 2. CHIP PERCOBAAN (INLINE FORM INPUT HANYA ANGKA) -->
+        <div class="pill-item">
+            <div class="pill-btn {{ $percobaan ? 'active' : '' }}" id="btn-chip-percobaan" onclick="showPercobaanInput()">
+                <span>🔄 Percobaan:</span>
+                <strong id="label-percobaan">{{ $percobaan ? 'Ke-' . $percobaan : 'Semua' }}</strong>
+                <span class="caret">▼</span>
+            </div>
+            <div class="pill-input-form" id="form-chip-percobaan">
+                <label for="input-percobaan" style="font-size:12px; font-weight:bold; color:var(--purple);">Ke-</label>
+                <input type="number" id="input-percobaan" min="1" placeholder="1" value="{{ $percobaan ?? '' }}" onkeydown="if(event.key==='Enter') submitPercobaan()">
+                <button type="button" onclick="submitPercobaan()" title="Terapkan">✓</button>
+                <button type="button" onclick="resetPercobaanInput()" title="Batal" style="background:#ddd; color:#333;">✕</button>
+            </div>
+        </div>
+
+        <!-- 3. CHIP KELULUSAN (DROPDOWN) -->
+        <div class="pill-item">
+            <div class="pill-btn {{ $kelulusan ? 'active' : '' }}" id="btn-chip-kelulusan" onclick="toggleDropdown('dropdown-kelulusan')">
+                <span>🎓 Kelulusan:</span>
+                <strong id="label-kelulusan">
+                    @if($kelulusan === 'lulus') Lulus (≥ KKM)
+                    @elseif($kelulusan === 'tidak_lulus') Tidak Lulus (&lt; KKM)
+                    @else Semua
+                    @endif
+                </strong>
+                <span class="caret">▼</span>
+            </div>
+            <div class="pill-dropdown" id="dropdown-kelulusan">
+                <div class="pill-dropdown-item {{ !$kelulusan ? 'selected' : '' }}" onclick="applyFilter('kelulusan', '')">
+                    Semua Kelulusan
+                </div>
+                <div class="pill-dropdown-item {{ $kelulusan === 'lulus' ? 'selected' : '' }}" onclick="applyFilter('kelulusan', 'lulus')">
+                    ✓ Lulus (≥ KKM)
+                </div>
+                <div class="pill-dropdown-item {{ $kelulusan === 'tidak_lulus' ? 'selected' : '' }}" onclick="applyFilter('kelulusan', 'tidak_lulus')">
+                    ⚠️ Tidak Lulus (&lt; KKM)
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CHIP TANGGAL (DATE PICKER) -->
+        <div class="pill-item">
+            <div class="pill-btn {{ $tanggal ? 'active' : '' }}" id="btn-chip-tanggal" onclick="showTanggalInput()">
+                <span>📅 Tanggal:</span>
+                <strong id="label-tanggal">{{ $tanggal ? date('d/m/Y', strtotime($tanggal)) : 'Semua' }}</strong>
+                <span class="caret">▼</span>
+            </div>
+            <div class="pill-input-form" id="form-chip-tanggal">
+                <input type="date" id="input-tanggal" value="{{ $tanggal ?? '' }}" onchange="submitTanggal(this.value)">
+                <button type="button" onclick="resetTanggalInput()" title="Batal" style="background:#ddd; color:#333;">✕</button>
+            </div>
+        </div>
+
+        <!-- 5. CHIP RESET (JIKA ADA FILTER AKTIF) -->
+        <div class="pill-item" id="pill-reset-wrapper" style="{{ ($kategori || $percobaan || $kelulusan || $tanggal) ? '' : 'display:none;' }}">
+            <div class="pill-btn btn-pill-reset" onclick="resetAllFilters()">
+                ✕ Reset Filter
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@if($hasil->isEmpty())
+    <div class="empty">
+        <h3>Tidak Ada Hasil Kuis</h3>
+        <p>Tidak ditemukan data hasil kuis yang sesuai dengan kriteria filter saat ini.</p>
+        @if($kategori || $percobaan || $kelulusan || $tanggal)
+            <button onclick="resetAllFilters()" class="btn btn-secondary btn-small">
+                ✕ Hapus Semua Filter
+            </button>
         @endif
+    </div>
+@else
+    <section class="card">
+        <div class="card-header">
+            <div>
+                <h2>Hasil Pengerjaan Kuis Siswa</h2>
+                <p class="muted" id="info-count-row">Menampilkan {{ $hasil->count() }} data pengerjaan kuis siswa</p>
+            </div>
+        </div>
 
-    </main>
+        <div class="table-wrap">
+            <table id="table-nilai">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No</th>
+                        <th>Siswa</th>
+                        <th>Kuis</th>
+                        <th>Kategori</th>
+                        <th style="width: 90px; text-align: center;">Percobaan</th>
+                        <th style="width: 70px;">Nilai</th>
+                        <th style="width: 70px;">KKM</th>
+                        <th>Kelulusan</th>
+                        <th>Tanggal</th>
+                        <th style="min-width: 220px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($hasil as $item)
+                        @php
+                            $kat = strtolower(trim($item->kuis->kategori ?? ''));
+                            $isUlangan = $kat === 'ulangan';
+                            $lulus = $item->nilai !== null && $item->kuis && $item->kuis->kkm !== null && $item->nilai >= $item->kuis->kkm;
+                            $sudahRemedial = in_array($item->id_mengerjakan, $sudahDitugaskanRemedial);
+                        @endphp
+                        <tr class="data-row"
+                            data-kategori="{{ $kat }}"
+                            data-percobaan="{{ $item->percobaan_ke }}"
+                            data-lulus="{{ $lulus ? 'lulus' : 'tidak_lulus' }}"
+                            data-tanggal="{{ $item->tanggal ? date('Y-m-d', strtotime($item->tanggal)) : '' }}">
 
-</body>
+                            <td class="row-num number" style="text-align: left;">{{ $loop->iteration }}</td>
 
-</html>
+                            <td>
+                                <strong>{{ $item->siswa->nama_lengkap ?? '-' }}</strong>
+                                <span class="muted small">NISN: {{ $item->siswa->nomor_induk ?? '-' }}</span>
+                            </td>
+
+                            <td>
+                                <strong>{{ $item->kuis->judul ?? '-' }}</strong>
+                            </td>
+
+                            <td>
+                                <span class="badge-category {{ $kat }}">
+                                    {{ $item->kuis->kategori ?? '-' }}
+                                </span>
+                            </td>
+
+                            <td style="text-align: center;">
+                                <strong>Ke-{{ $item->percobaan_ke }}</strong>
+                            </td>
+
+                            <td>
+                                <strong class="score {{ $lulus ? 'pass' : 'fail' }}">
+                                    {{ $item->nilai !== null ? number_format($item->nilai, 1) : '-' }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ $item->kuis->kkm !== null ? number_format($item->kuis->kkm, 1) : '-' }}
+                            </td>
+
+                            <td>
+                                @if($item->nilai === null)
+                                    -
+                                @elseif($lulus)
+                                    <span class="pass">✓ Lulus</span>
+                                @else
+                                    <span class="fail">⚠️ Tidak Lulus</span>
+                                @endif
+                            </td>
+
+                            <td>
+                                {{ $item->tanggal ? date('d/m/Y', strtotime($item->tanggal)) : '-' }}
+                            </td>
+
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <a href="{{ route('guru.nilai.show', $item->id_mengerjakan) }}" class="btn btn-secondary btn-small">
+                                        Lihat Detail
+                                    </a>
+
+                                    {{-- FITUR BERIKAN REMEDIAL: HANYA UNTUK KUIS KATEGORI ULANGAN YANG TIDAK LULUS --}}
+                                    @if($isUlangan && !$lulus)
+                                        @if($sudahRemedial)
+                                            <span class="badge-remedial-done" title="Siswa sudah diberikan tugas remedial">
+                                                ✓ Remedial Ditugaskan
+                                            </span>
+                                        @else
+                                            <form action="{{ route('guru.nilai.remedial', $item->id_mengerjakan) }}" method="POST" style="display:inline;" onsubmit="return confirm('Berikan tugas remedial untuk siswa {{ $item->siswa->nama_lengkap ?? 'ini' }}?')">
+                                                @csrf
+                                                <button type="submit" class="btn-action-remedial" title="Tugaskan kuis remedial ke siswa ini">
+                                                    ⚡ Berikan Remedial
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </section>
+@endif
+
+@push('scripts')
+<script>
+    // State Filter Aktif
+    const activeFilters = {
+        kategori: '{{ strtolower($kategori ?? "") }}',
+        percobaan: '{{ $percobaan ?? "" }}',
+        kelulusan: '{{ $kelulusan ?? "" }}',
+        tanggal: '{{ $tanggal ?? "" }}'
+    };
+
+    function toggleDropdown(id) {
+        const el = document.getElementById(id);
+        const isShown = el.classList.contains('show');
+        closeAllDropdowns();
+        if (!isShown) {
+            el.classList.add('show');
+        }
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.pill-dropdown').forEach(d => d.classList.remove('show'));
+    }
+
+    // Tutup dropdown jika klik di luar
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.pill-item')) {
+            closeAllDropdowns();
+        }
+    });
+
+    // 1. Kategori Filter
+    function applyFilter(key, value) {
+        activeFilters[key] = value.toLowerCase().trim();
+        closeAllDropdowns();
+
+        const labelEl = document.getElementById('label-' + key);
+        const btnEl = document.getElementById('btn-chip-' + key);
+        if (value) {
+            labelEl.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+            btnEl.classList.add('active');
+        } else {
+            labelEl.textContent = 'Semua';
+            btnEl.classList.remove('active');
+        }
+
+        runClientFilter();
+    }
+
+    // 2. Percobaan Filter
+    function showPercobaanInput() {
+        document.getElementById('btn-chip-percobaan').style.display = 'none';
+        const form = document.getElementById('form-chip-percobaan');
+        form.classList.add('show');
+        const inp = document.getElementById('input-percobaan');
+        inp.focus();
+        inp.select();
+    }
+
+    function submitPercobaan() {
+        const val = document.getElementById('input-percobaan').value.trim();
+        activeFilters.percobaan = val;
+        const btn = document.getElementById('btn-chip-percobaan');
+        const label = document.getElementById('label-percobaan');
+        const form = document.getElementById('form-chip-percobaan');
+
+        form.classList.remove('show');
+        btn.style.display = 'inline-flex';
+
+        if (val) {
+            label.textContent = 'Ke-' + val;
+            btn.classList.add('active');
+        } else {
+            label.textContent = 'Semua';
+            btn.classList.remove('active');
+        }
+
+        runClientFilter();
+    }
+
+    function resetPercobaanInput() {
+        document.getElementById('input-percobaan').value = '';
+        submitPercobaan();
+    }
+
+    // 4. Tanggal Filter
+    function showTanggalInput() {
+        document.getElementById('btn-chip-tanggal').style.display = 'none';
+        const form = document.getElementById('form-chip-tanggal');
+        form.classList.add('show');
+        document.getElementById('input-tanggal').focus();
+    }
+
+    function submitTanggal(val) {
+        activeFilters.tanggal = val.trim();
+        const btn = document.getElementById('btn-chip-tanggal');
+        const label = document.getElementById('label-tanggal');
+        const form = document.getElementById('form-chip-tanggal');
+
+        form.classList.remove('show');
+        btn.style.display = 'inline-flex';
+
+        if (val) {
+            const parts = val.split('-');
+            label.textContent = parts[2] + '/' + parts[1] + '/' + parts[0];
+            btn.classList.add('active');
+        } else {
+            label.textContent = 'Semua';
+            btn.classList.remove('active');
+        }
+
+        runClientFilter();
+    }
+
+    function resetTanggalInput() {
+        document.getElementById('input-tanggal').value = '';
+        submitTanggal('');
+    }
+
+    // Reset Semua Filter
+    function resetAllFilters() {
+        activeFilters.kategori = '';
+        activeFilters.percobaan = '';
+        activeFilters.kelulusan = '';
+        activeFilters.tanggal = '';
+
+        document.getElementById('label-kategori').textContent = 'Semua';
+        document.getElementById('btn-chip-kategori').classList.remove('active');
+
+        document.getElementById('label-percobaan').textContent = 'Semua';
+        document.getElementById('btn-chip-percobaan').classList.remove('active');
+        document.getElementById('input-percobaan').value = '';
+
+        document.getElementById('label-kelulusan').textContent = 'Semua';
+        document.getElementById('btn-chip-kelulusan').classList.remove('active');
+
+        document.getElementById('label-tanggal').textContent = 'Semua';
+        document.getElementById('btn-chip-tanggal').classList.remove('active');
+        document.getElementById('input-tanggal').value = '';
+
+        const url = new URL(window.location);
+        url.search = '';
+        window.history.pushState({}, '', url);
+
+        runClientFilter();
+    }
+
+    // Filter Real-Time pada Baris Tabel
+    function runClientFilter() {
+        const rows = document.querySelectorAll('.data-row');
+        let visibleCount = 0;
+
+        rows.forEach((row) => {
+            const kat = (row.getAttribute('data-kategori') || '').toLowerCase();
+            const perc = row.getAttribute('data-percobaan') || '';
+            const lulus = row.getAttribute('data-lulus') || '';
+            const tgl = row.getAttribute('data-tanggal') || '';
+
+            let match = true;
+
+            if (activeFilters.kategori && kat !== activeFilters.kategori) {
+                match = false;
+            }
+            if (activeFilters.percobaan && perc !== activeFilters.percobaan) {
+                match = false;
+            }
+            if (activeFilters.kelulusan && lulus !== activeFilters.kelulusan) {
+                match = false;
+            }
+            if (activeFilters.tanggal && tgl !== activeFilters.tanggal) {
+                match = false;
+            }
+
+            if (match) {
+                row.style.display = '';
+                visibleCount++;
+                const numCell = row.querySelector('.row-num');
+                if (numCell) numCell.textContent = visibleCount;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const hasActive = activeFilters.kategori || activeFilters.percobaan || activeFilters.kelulusan || activeFilters.tanggal;
+        const resetBtn = document.getElementById('pill-reset-wrapper');
+        if (resetBtn) {
+            resetBtn.style.display = hasActive ? 'inline-block' : 'none';
+        }
+
+        const countInfo = document.getElementById('info-count-row');
+        if (countInfo) {
+            countInfo.textContent = 'Menampilkan ' + visibleCount + ' data pengerjaan kuis siswa';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (activeFilters.kategori || activeFilters.percobaan || activeFilters.kelulusan || activeFilters.tanggal) {
+            runClientFilter();
+        }
+    });
+</script>
+@endpush
+
+@endsection

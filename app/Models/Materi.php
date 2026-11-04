@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Materi extends Model
 {
-    protected $table = 'materis';
+    protected $table = 'materi';
 
     protected $primaryKey = 'id_materi';
 
@@ -20,15 +20,20 @@ class Materi extends Model
         'judul',
         'bab',
         'kelas',
+        'id_mapel',
         'deskripsi',
         'isi_materi',
         'link_youtube',
         'id_user',
     ];
 
-    public function user()
-    {
+    public function user(){
         return $this->belongsTo(User::class, 'id_user', 'id_user');
+    }
+
+    public function mapel()
+    {
+        return $this->belongsTo(Mapel::class, 'id_mapel', 'id_mapel');
     }
 
     public function kuis()
@@ -45,7 +50,7 @@ class Materi extends Model
 
     public function progress()
     {
-        return $this->hasMany(Progress::class, 'id_materi', 'id_materi');
+        return $this->hasMany(Progress::class,'id_materi','id_materi');
     }
 
     public function pdfUrl(): ?string

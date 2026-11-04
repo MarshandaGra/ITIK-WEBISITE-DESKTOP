@@ -5,10 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kuis;
 use App\Models\Soal;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 class SoalController extends Controller
 {
@@ -51,10 +48,25 @@ class SoalController extends Controller
 
         /*
          * Validasi data soal.
+         * Bobot dihitung otomatis oleh sistem agar guru tidak kerepotan.
          */
-        $validated = $request->validate($this->questionRules());
-        $isPilihanGanda = $validated['tipe_soal'] === 'pilihan_ganda';
-        $this->validateOptions($request, $validated, $isPilihanGanda);
+        $validated = $request->validate([
+            'pertanyaan' => 'required|string',
+            'opsi_a' => 'required|string|max:255',
+            'opsi_b' => 'required|string|max:255',
+            'opsi_c' => 'required|string|max:255',
+            'opsi_d' => 'required|string|max:255',
+            'opsi_e' => 'nullable|string|max:255',
+            'jawaban' => [
+                'required',
+                Rule::in(['A', 'B', 'C', 'D', 'E']),
+            ],
+            'bobot' => 'nullable|numeric|min:0.01|max:100',
+            'tingkat_kesulitan' => [
+                'nullable',
+                Rule::in(['mudah', 'sedang', 'sulit']),
+            ],
+        ]);
 
         /*
          * Pertanyaan tidak boleh sama
@@ -77,44 +89,15 @@ class SoalController extends Controller
          * Pastikan jawaban yang dipilih
          * mempunyai opsi.
          */
-        $opsiJawaban = 'opsi_'.strtolower($validated['jawaban'] ?? 'a');
+        $opsiJawaban = 'opsi_' . strtolower($validated['jawaban']);
 
-        if (
-            $isPilihanGanda &&
-            empty(trim($validated[$opsiJawaban] ?? '')) &&
-            ! $request->hasFile('gambar_'.$opsiJawaban)
-        ) {
+        if (empty(trim($validated[$opsiJawaban] ?? ''))) {
             return back()
                 ->withInput()
                 ->with(
                     'error',
-                    "Jawaban {$validated['jawaban']} harus memiliki teks atau gambar."
+                    "Jawaban {$validated['jawaban']} dipilih, tetapi opsi {$validated['jawaban']} belum diisi."
                 );
-        }
-
-        $bobot = $isPilihanGanda ? (float) $validated['bobot'] : 0;
-
-        if ($isPilihanGanda) {
-            $totalBobot = (float) $kuis->soal()
-                ->where('tipe_soal', 'pilihan_ganda')
-                ->sum('bobot');
-            $totalSetelahTambah = $totalBobot + $bobot;
-
-            if ($totalSetelahTambah > 100) {
-                return back()
-                    ->withInput()
-                    ->with(
-                        'error',
-                        'Total bobot soal tidak boleh lebih dari 100. '.
-                        'Total saat ini: '.
-                        number_format($totalBobot, 2).
-                        ', bobot soal baru: '.
-                        number_format($bobot, 2).
-                        ', sehingga menjadi '.
-                        number_format($totalSetelahTambah, 2).
-                        '.'
-                    );
-            }
         }
 
         /*
@@ -122,7 +105,7 @@ class SoalController extends Controller
          */
         $jumlahSoal = $kuis->soal()->count();
 
-        $idSoal = 'S'.str_pad(
+        $idSoal = 'S' . str_pad(
             $jumlahSoal + 1,
             3,
             '0',
@@ -135,7 +118,7 @@ class SoalController extends Controller
         while (Soal::where('id_soal', $idSoal)->exists()) {
             $jumlahSoal++;
 
-            $idSoal = 'S'.str_pad(
+            $idSoal = 'S' . str_pad(
                 $jumlahSoal + 1,
                 3,
                 '0',
@@ -144,32 +127,27 @@ class SoalController extends Controller
         }
 
         /*
-         * Simpan soal.
+         * Simpan soal. Tingkat kesulitan default mengikuti tingkat kesulitan kuis.
          */
-        $attributes = [
+        $kuis->soal()->create([
             'id_soal' => $idSoal,
-            'tipe_soal' => $validated['tipe_soal'],
             'pertanyaan' => $validated['pertanyaan'],
-            'opsi_a' => $isPilihanGanda ? ($validated['opsi_a'] ?? null) : null,
-            'opsi_b' => $isPilihanGanda ? ($validated['opsi_b'] ?? null) : null,
-            'opsi_c' => $isPilihanGanda ? ($validated['opsi_c'] ?? null) : null,
-            'opsi_d' => $isPilihanGanda ? ($validated['opsi_d'] ?? null) : null,
-            'opsi_e' => $isPilihanGanda ? ($validated['opsi_e'] ?? null) : null,
-            'jawaban' => $isPilihanGanda ? $validated['jawaban'] : null,
-            'bobot' => $bobot,
-            'tingkat_kesulitan' => $validated['tingkat_kesulitan'] ?? null,
-        ];
-        $attributes += $this->storeImages(
-            $request,
-            $kuis->id_kuis,
-            $isPilihanGanda
-        );
+            'opsi_a' => $validated['opsi_a'],
+            'opsi_b' => $validated['opsi_b'],
+            'opsi_c' => $validated['opsi_c'],
+            'opsi_d' => $validated['opsi_d'],
+            'opsi_e' => $validated['opsi_e'] ?? null,
+            'jawaban' => $validated['jawaban'],
+            'bobot' => 1,
+            'tingkat_kesulitan' => $validated['tingkat_kesulitan'] ?? $kuis->tingkat_kesulitan ?? 'mudah',
+        ]);
 
-        $kuis->soal()->create($attributes);
+        // Seimbangkan bobot seluruh soal secara otomatis (skala 100 dibagi rata)
+        $this->seimbangkanBobot($kuis);
 
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
-            ->with('success', 'Soal berhasil ditambahkan.');
+            ->with('success', 'Soal berhasil ditambahkan. Bobot nilai telah dihitung otomatis.');
     }
 
     public function show(Kuis $kuis, Soal $soal)
@@ -214,9 +192,23 @@ class SoalController extends Controller
         /*
          * Validasi data soal.
          */
-        $validated = $request->validate($this->questionRules());
-        $isPilihanGanda = $validated['tipe_soal'] === 'pilihan_ganda';
-        $this->validateOptions($request, $validated, $isPilihanGanda, $soal);
+        $validated = $request->validate([
+            'pertanyaan' => 'required|string',
+            'opsi_a' => 'required|string|max:255',
+            'opsi_b' => 'required|string|max:255',
+            'opsi_c' => 'required|string|max:255',
+            'opsi_d' => 'required|string|max:255',
+            'opsi_e' => 'nullable|string|max:255',
+            'jawaban' => [
+                'required',
+                Rule::in(['A', 'B', 'C', 'D', 'E']),
+            ],
+            'bobot' => 'nullable|numeric|min:0.01|max:100',
+            'tingkat_kesulitan' => [
+                'nullable',
+                Rule::in(['mudah', 'sedang', 'sulit']),
+            ],
+        ]);
 
         /*
          * Pertanyaan tidak boleh sama dengan
@@ -239,99 +231,33 @@ class SoalController extends Controller
         /*
          * Pastikan jawaban yang dipilih mempunyai opsi.
          */
-        $opsiJawaban = 'opsi_'.strtolower($validated['jawaban'] ?? 'a');
+        $opsiJawaban = 'opsi_' . strtolower($validated['jawaban']);
 
-        if (
-            $isPilihanGanda &&
-            empty(trim($validated[$opsiJawaban] ?? '')) &&
-            ! $request->hasFile('gambar_'.$opsiJawaban) &&
-            (
-                empty($soal->{'gambar_'.$opsiJawaban}) ||
-                $request->boolean('hapus_gambar_'.$opsiJawaban)
-            )
-        ) {
+        if (empty(trim($validated[$opsiJawaban] ?? ''))) {
             return back()
                 ->withInput()
                 ->with(
                     'error',
-                    "Jawaban {$validated['jawaban']} harus memiliki teks atau gambar."
+                    "Jawaban {$validated['jawaban']} dipilih, tetapi opsi {$validated['jawaban']} belum diisi."
                 );
         }
 
         /*
-         * Hitung total bobot.
-         *
-         * Bobot soal yang sedang diedit
-         * dikeluarkan terlebih dahulu.
+         * Update soal. Bobot diseimbangkan otomatis.
          */
-        $bobot = $isPilihanGanda ? (float) $validated['bobot'] : 0;
-
-        if ($isPilihanGanda) {
-            $totalBobotLain = (float) $kuis->soal()
-                ->where('tipe_soal', 'pilihan_ganda')
-                ->where('id_soal', '!=', $soal->id_soal)
-                ->sum('bobot');
-            $totalSetelahUpdate = $totalBobotLain + $bobot;
-
-            if ($totalSetelahUpdate > 100) {
-                return back()
-                    ->withInput()
-                    ->with(
-                        'error',
-                        'Total bobot soal tidak boleh lebih dari 100. '.
-                        'Total bobot soal lain: '.
-                        number_format($totalBobotLain, 2).
-                        ', bobot baru: '.
-                        number_format($bobot, 2).
-                        ', sehingga menjadi '.
-                        number_format($totalSetelahUpdate, 2).
-                        '.'
-                    );
-            }
-        }
-
-        $imageUpdates = $this->storeImages(
-            $request,
-            $kuis->id_kuis,
-            $isPilihanGanda
-        );
-
-        if (! $isPilihanGanda) {
-            foreach (array_slice($this->imageFields(), 1) as $field) {
-                $imageUpdates[$field] = null;
-            }
-        }
-
-        $oldImages = [];
-
-        foreach ($this->imageFields() as $field) {
-            if (
-                array_key_exists($field, $imageUpdates) &&
-                $soal->{$field} &&
-                $soal->{$field} !== $imageUpdates[$field]
-            ) {
-                $oldImages[] = $soal->{$field};
-            }
-        }
-
-        $attributes = [
-            'tipe_soal' => $validated['tipe_soal'],
+        $soal->update([
             'pertanyaan' => $validated['pertanyaan'],
-            'opsi_a' => $isPilihanGanda ? ($validated['opsi_a'] ?? null) : null,
-            'opsi_b' => $isPilihanGanda ? ($validated['opsi_b'] ?? null) : null,
-            'opsi_c' => $isPilihanGanda ? ($validated['opsi_c'] ?? null) : null,
-            'opsi_d' => $isPilihanGanda ? ($validated['opsi_d'] ?? null) : null,
-            'opsi_e' => $isPilihanGanda ? ($validated['opsi_e'] ?? null) : null,
-            'jawaban' => $isPilihanGanda ? $validated['jawaban'] : null,
-            'bobot' => $bobot,
-            'tingkat_kesulitan' => $validated['tingkat_kesulitan'] ?? null,
-        ] + $imageUpdates;
+            'opsi_a' => $validated['opsi_a'],
+            'opsi_b' => $validated['opsi_b'],
+            'opsi_c' => $validated['opsi_c'],
+            'opsi_d' => $validated['opsi_d'],
+            'opsi_e' => $validated['opsi_e'] ?? null,
+            'jawaban' => $validated['jawaban'],
+            'tingkat_kesulitan' =>
+                $validated['tingkat_kesulitan'] ?? $soal->tingkat_kesulitan ?? $kuis->tingkat_kesulitan ?? 'mudah',
+        ]);
 
-        $soal->update($attributes);
-
-        if ($oldImages !== [] && ! Storage::disk('public')->delete($oldImages)) {
-            throw new RuntimeException('Gagal menghapus gambar soal lama.');
-        }
+        $this->seimbangkanBobot($kuis);
 
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
@@ -351,20 +277,35 @@ class SoalController extends Controller
                 );
         }
 
-        $images = array_filter(array_map(
-            fn (string $field): ?string => $soal->{$field},
-            $this->imageFields()
-        ));
-
         $soal->delete();
 
-        if ($images !== [] && ! Storage::disk('public')->delete($images)) {
-            throw new RuntimeException('Gagal menghapus gambar soal.');
-        }
+        $this->seimbangkanBobot($kuis);
 
         return redirect()
             ->route('kuis.soal.index', $kuis->id_kuis)
             ->with('success', 'Soal berhasil dihapus.');
+    }
+
+    private function seimbangkanBobot(Kuis $kuis): void
+    {
+        $soalList = $kuis->soal()->orderBy('id_soal')->get();
+        $total = $soalList->count();
+
+        if ($total === 0) {
+            return;
+        }
+
+        $bobotPerSoal = round(100 / $total, 2);
+        $totalTerhitung = $bobotPerSoal * $total;
+        $selisih = round(100 - $totalTerhitung, 2);
+
+        foreach ($soalList as $index => $item) {
+            $bobotIni = $bobotPerSoal;
+            if ($index === $total - 1 && $selisih != 0) {
+                $bobotIni = round($bobotIni + $selisih, 2);
+            }
+            $item->update(['bobot' => $bobotIni]);
+        }
     }
 
     private function checkSoalBelongsToKuis(
@@ -374,124 +315,5 @@ class SoalController extends Controller
         if ($soal->id_kuis !== $kuis->id_kuis) {
             abort(404);
         }
-    }
-
-    private function questionRules(): array
-    {
-        $rules = [
-            'tipe_soal' => [
-                'required',
-                Rule::in(['pilihan_ganda', 'essay']),
-            ],
-            'pertanyaan' => ['required', 'string'],
-            'opsi_a' => ['nullable', 'string', 'max:255'],
-            'opsi_b' => ['nullable', 'string', 'max:255'],
-            'opsi_c' => ['nullable', 'string', 'max:255'],
-            'opsi_d' => ['nullable', 'string', 'max:255'],
-            'opsi_e' => ['nullable', 'string', 'max:255'],
-            'jawaban' => [
-                'nullable',
-                'required_if:tipe_soal,pilihan_ganda',
-                Rule::in(['A', 'B', 'C', 'D', 'E']),
-            ],
-            'bobot' => [
-                'nullable',
-                'required_if:tipe_soal,pilihan_ganda',
-                'numeric',
-                'min:0.01',
-                'max:100',
-            ],
-            'tingkat_kesulitan' => [
-                'nullable',
-                Rule::in(['mudah', 'sedang', 'sulit']),
-            ],
-        ];
-
-        foreach ($this->imageFields() as $field) {
-            $rules[$field] = [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-            ];
-            $rules['hapus_'.$field] = ['sometimes', 'boolean'];
-        }
-
-        return $rules;
-    }
-
-    private function validateOptions(
-        Request $request,
-        array $validated,
-        bool $isPilihanGanda,
-        ?Soal $soal = null
-    ): void {
-        if (! $isPilihanGanda) {
-            return;
-        }
-
-        $errors = [];
-
-        foreach (['a', 'b', 'c', 'd'] as $option) {
-            $textField = 'opsi_'.$option;
-            $imageField = 'gambar_'.$textField;
-            $hasExistingImage = $soal?->{$imageField} &&
-                ! $request->boolean('hapus_'.$imageField);
-
-            if (
-                empty(trim($validated[$textField] ?? '')) &&
-                ! $request->hasFile($imageField) &&
-                ! $hasExistingImage
-            ) {
-                $errors[$textField] = 'Isi teks opsi atau unggah gambar opsi.';
-            }
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
-    }
-
-    private function imageFields(): array
-    {
-        return [
-            'gambar_pertanyaan',
-            'gambar_opsi_a',
-            'gambar_opsi_b',
-            'gambar_opsi_c',
-            'gambar_opsi_d',
-            'gambar_opsi_e',
-        ];
-    }
-
-    private function storeImages(
-        Request $request,
-        string $quizId,
-        bool $includeOptions
-    ): array {
-        $images = [];
-
-        foreach ($this->imageFields() as $field) {
-            if (! $includeOptions && $field !== 'gambar_pertanyaan') {
-                continue;
-            }
-
-            if ($request->hasFile($field)) {
-                $path = $request->file($field)->store(
-                    'soal-images/'.$quizId,
-                    'public'
-                );
-
-                if ($path === false) {
-                    throw new RuntimeException('Gagal menyimpan gambar soal.');
-                }
-
-                $images[$field] = $path;
-            } elseif ($request->boolean('hapus_'.$field)) {
-                $images[$field] = null;
-            }
-        }
-
-        return $images;
     }
 }

@@ -2,27 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kuis;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $jumlahSiswa = DB::table('users')
+        Kuis::sinkronisasiStatus();
+
+        $jumlahSiswa = DB::table('user')
             ->where('role', 'siswa')
             ->count();
 
-        $jumlahMateri = DB::table('materis')
+        $jumlahMateri = DB::table('materi')
             ->count();
 
         $jumlahKuis = DB::table('kuis')
             ->where('is_aktif', 1)
             ->count();
 
-        $jumlahSoal = DB::table('soals')
-            ->count();
-
-        $rataNilai = DB::table('mengerjakans')
+        $rataNilai = DB::table('mengerjakan')
             ->whereNotNull('nilai')
             ->avg('nilai');
 
@@ -32,7 +32,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $materiTerbaru = DB::table('materis')
+        $materiTerbaru = DB::table('materi')
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
@@ -41,7 +41,6 @@ class DashboardController extends Controller
             'jumlahSiswa',
             'jumlahMateri',
             'jumlahKuis',
-            'jumlahSoal',
             'rataNilai',
             'kuisTerbaru',
             'materiTerbaru'

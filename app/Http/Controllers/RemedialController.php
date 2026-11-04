@@ -6,21 +6,26 @@ use App\Models\Kuis;
 use App\Models\Remedial;
 use App\Models\RemedialSiswa;
 use App\Models\Mengerjakan;
+use App\Support\MenghasilkanId;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class RemedialController extends Controller
 {
+    use MenghasilkanId;
     /**
      * Menampilkan daftar kuis remedial.
      */
     public function index()
     {
         $remedials = Remedial::with([
-            'kuisRemedial',
-            'kuisAsal',
+            'kuisRemedial.soal',
+            'kuisAsal.mapel',
         ])
+            ->whereHas('kuisAsal', function ($q) {
+                $q->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan']);
+            })
             ->latest('id_remedial')
             ->get();
 
@@ -37,13 +42,12 @@ class RemedialController extends Controller
     {
         /*
          * Kuis yang dapat dijadikan asal remedial.
-         *
-         * Kuis remedial tidak boleh menjadi
-         * kuis asal remedial lagi.
+         * Sesuai ketentuan: tugas remedial hanya diberikan
+         * untuk kuis yang berkategori 'ulangan'.
          */
         $kuisAsal = Kuis::where('is_aktif', true)
             ->where('status_publikasi', 'terbit')
-            ->where('kategori', '!=', 'remedial')
+            ->whereRaw('LOWER(TRIM(kategori)) = ?', ['ulangan'])
             ->whereNotNull('kkm')
             ->orderByDesc('created_at')
             ->get();
@@ -102,12 +106,12 @@ class RemedialController extends Controller
                 ]);
         }
 
-        if ($kuisAsal->kategori === 'remedial') {
+        if (strtolower(trim($kuisAsal->kategori)) !== 'ulangan') {
             return back()
                 ->withInput()
                 ->withErrors([
                     'id_kuis_asal' =>
-                        'Kuis remedial tidak dapat dijadikan kuis asal.',
+                        'Tugas remedial hanya dapat dibuat untuk kuis dengan kategori Ulangan.',
                 ]);
         }
 
@@ -119,7 +123,7 @@ class RemedialController extends Controller
         /*
          * Buat ID kuis.
          */
-        $idKuis = $this->generateKuisId();
+        $idKuis = $this->idBerikutnya('kuis', 'id_kuis', 'K');
 
         DB::transaction(function () use (
             $validated,
@@ -219,31 +223,6 @@ class RemedialController extends Controller
     }
 
     /**
-     * Generate ID Kuis berikutnya.
-     *
-     * Contoh:
-     * K001
-     * K002
-     * K003
-     */
-    private function generateKuisId(): string
-    {
-        $nomor = Kuis::query()
-            ->pluck('id_kuis')
-            ->map(function (string $idKuis): int {
-                return (int) preg_replace('/^K/', '', $idKuis);
-            })
-            ->max() ?? 0;
-
-        return 'K' . str_pad(
-            $nomor + 1,
-            3,
-            '0',
-            STR_PAD_LEFT
-        );
-    }
-
-    /**
      * Menampilkan siswa yang nilainya di bawah KKM berdasarkan kuis asal.
      */
     public function siswa($idRemedial)
@@ -259,10 +238,13 @@ class RemedialController extends Controller
             return back()->with('error', 'Kuis asal tidak ditemukan.');
         }
 
+        if (strtolower(trim($kuisAsal->kategori)) !== 'ulangan') {
+            return back()->with('error', 'Tugas remedial hanya berlaku untuk kuis dengan kategori Ulangan.');
+        }
+
         $hasilSiswa = Mengerjakan::with('siswa')
             ->where('id_kuis', $kuisAsal->id_kuis)
             ->where('status_pengerjaan', 'final')
-            ->where('status_validasi', 'sudah divalidasi')
             ->whereNotNull('nilai')
             ->where('nilai', '<', $kuisAsal->kkm)
             ->orderBy('nilai')

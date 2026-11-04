@@ -1,57 +1,96 @@
-<h1>Remedial</h1>
+@extends('layouts.guru')
+@section('title', 'Kelola Remedial')
 
-@if(session('success'))
-    <p style="color: green;">
-        {{ session('success') }}
-    </p>
-@endif
+@section('content')
 
-@if(session('error'))
-    <p style="color: red;">
-        {{ session('error') }}
-    </p>
-@endif
+<div class="page-heading">
+    <div>
+        <h1>Kelola Remedial</h1>
+        <p>Pengelolaan kuis remedial khusus untuk kuis ber-kategori Ulangan.</p>
+    </div>
+    <div>
+        <a href="{{ route('guru.remedial.create') }}" class="btn btn-primary">
+            + Buat Kuis Remedial
+        </a>
+    </div>
+</div>
 
-<h2>Pilih Kuis Asal</h2>
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h2>Daftar Kuis Remedial</h2>
+            <p class="muted">Remedial yang ditugaskan dari evaluasi ulangan siswa.</p>
+        </div>
+    </div>
 
-@if($remedials->isEmpty())
+    @if($remedials->isEmpty())
+        <div class="empty-state" style="padding: 48px 20px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 12px;">📋</div>
+            <h3 style="margin-bottom: 6px;">Belum Ada Kuis Remedial</h3>
+            <p class="muted" style="margin-bottom: 20px;">Silakan buat kuis remedial baru untuk siswa yang nilainya di bawah KKM pada Ulangan.</p>
+            <a href="{{ route('guru.remedial.create') }}" class="btn btn-primary">
+                + Buat Kuis Remedial Sekarang
+            </a>
+        </div>
+    @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">No</th>
+                        <th>Judul Kuis Remedial</th>
+                        <th>Kuis Asal (Ulangan)</th>
+                        <th>Mata Pelajaran</th>
+                        <th>KKM</th>
+                        <th>Jumlah Soal</th>
+                        <th>Status</th>
+                        <th style="width: 200px; text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($remedials as $item)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <strong>{{ $item->kuisRemedial->judul ?? '-' }}</strong>
+                                <div><span class="badge badge-warning" style="font-size: 11px;">Remedial</span></div>
+                            </td>
+                            <td>
+                                {{ $item->kuisAsal->judul ?? '-' }}
+                                <div><span class="badge badge-info" style="font-size: 11px;">{{ $item->kuisAsal->kategori ?? 'Ulangan' }}</span></div>
+                            </td>
+                            <td>
+                                {{ $item->kuisAsal->mapel->nama_mapel ?? '-' }}
+                            </td>
+                            <td>
+                                <strong>{{ number_format($item->kuisRemedial->kkm ?? $item->kuisAsal->kkm, 1) }}</strong>
+                            </td>
+                            <td>
+                                {{ $item->kuisRemedial?->soal?->count() ?? 0 }} Soal
+                            </td>
+                            <td>
+                                @if(($item->kuisRemedial->status_publikasi ?? '') === 'terbit')
+                                    <span class="badge badge-success">Terbit</span>
+                                @else
+                                    <span class="badge badge-secondary">Draft</span>
+                                @endif
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 6px;">
+                                    <a href="{{ route('guru.remedial.siswa', $item->id_remedial) }}" class="btn btn-primary small">
+                                        👥 Tugaskan Siswa
+                                    </a>
+                                    <a href="{{ route('guru.remedial.show', $item->id_remedial) }}" class="btn btn-secondary small">
+                                        Detail
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</section>
 
-    <p>Belum ada kuis yang dapat digunakan untuk remedial.</p>
-
-@else
-
-    <table border="1" cellpadding="10">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Judul</th>
-                <th>Kategori</th>
-                <th>KKM</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach($remedials as $item)
-
-                <tr>
-                    <td>{{ $loop->iteration }}</td>
-
-                    <td>{{ $item->kuisAsal->judul ?? '-' }}</td>
-
-                    <td>{{ $item->kuisAsal->kategori ?? '-' }}</td>
-
-                    <td>{{ $item->kuisAsal->kkm ?? '-' }}</td>
-
-                    <td>
-                        <a href="{{ route('guru.remedial.siswa', $item->id_remedial) }}">
-                            Lihat Siswa
-                        </a>
-                    </td>
-                </tr>
-
-            @endforeach
-        </tbody>
-    </table>
-
-@endif
+@endsection

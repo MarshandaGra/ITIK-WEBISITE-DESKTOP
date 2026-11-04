@@ -1,130 +1,92 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Tugas Remedial</title>
-</head>
-<body>
+@extends('layouts.siswa')
+@section('title', 'Tugas Remedial')
 
-    <h1>Tugas Remedial Saya</h1>
+@section('content')
 
-    @if(session('success'))
-        <p style="color: green;">
-            {{ session('success') }}
-        </p>
-    @endif
+<div class="page-heading">
+    <div>
+        <h1>Tugas Remedial</h1>
+        <p>Perbaiki nilai kuis yang belum mencapai KKM.</p>
+    </div>
+    <a href="{{ route('siswa.kuis.index') }}" class="btn btn-secondary">
+        ← Ke Daftar Kuis
+    </a>
+</div>
 
-    @if(session('error'))
-        <p style="color: red;">
-            {{ session('error') }}
-        </p>
-    @endif
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h2>Tugas Remedial Saya</h2>
+            <p class="muted">{{ $tugas->count() }} tugas remedial tercatat</p>
+        </div>
+    </div>
 
     @if($tugas->isEmpty())
-
-        <p>Tidak ada tugas remedial.</p>
-
+        <div class="empty">
+            <h3>Tidak ada tugas remedial</h3>
+            <p>Tugas remedial akan muncul di sini jika nilaimu pada kuis ulangan belum mencapai KKM.</p>
+        </div>
     @else
-
-    <table border="1" cellpadding="10" cellspacing="0">
-
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Kuis Asal</th>
-                <th>Nilai Awal</th>
-                <th>KKM</th>
-                <th>Kuis Remedial</th>
-                <th>Tanggal Ditugaskan</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-            @foreach($tugas as $item)
-
-                @php
-                    $kkm = $item->mengerjakanAsal->kuis->kkm;
-                @endphp
-
-                <tr>
-
-                    <td>{{ $loop->iteration }}</td>
-
-                    <td>
-                        {{ $item->mengerjakanAsal->kuis->judul }}
-                    </td>
-
-                    <td>
-                        {{ $item->mengerjakanAsal->nilai }}
-                    </td>
-
-                    <td>
-                        {{ $kkm }}
-                    </td>
-
-                    <td>
-                        {{ $item->kuisRemedial->judul }}
-                    </td>
-
-                    <td>
-                        {{ $item->tanggal_ditugaskan }}
-                    </td>
-
-                    <td>
-
-                        @if($item->status === 'ditugaskan')
-
-                            <span style="color: orange;">
-                                Belum Dikerjakan
-                            </span>
-
-                        @elseif($item->status === 'selesai')
-
-                            <span style="color: green;">
-                                Selesai
-                            </span>
-
-                        @endif
-
-                    </td>
-
-                    <td>
-
-                        @if($item->status === 'ditugaskan')
-
-                            <a href="{{ route('siswa.remedial.kerjakan', $item->id_remedial_siswa) }}">
-                                Kerjakan Remedial
-                            </a>
-
-                        @elseif($item->status === 'selesai')
-
-                            <strong>Sudah Selesai</strong>
-
-                        @else
-
-                            {{ $item->status }}
-
-                        @endif
-
-                    </td>
-
-                </tr>
-
-            @endforeach
-
-        </tbody>
-
-    </table>
-
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No</th>
+                        <th>Kuis Asal</th>
+                        <th>Nilai Awal</th>
+                        <th>KKM</th>
+                        <th>Kuis Remedial</th>
+                        <th>Tanggal Ditugaskan</th>
+                        <th>Status</th>
+                        <th style="min-width: 150px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($tugas as $item)
+                        @php
+                            $kkm = $item->mengerjakanAsal?->kuis?->kkm;
+                        @endphp
+                        <tr>
+                            <td class="number" style="text-align: left;">{{ $loop->iteration }}</td>
+                            <td>
+                                <strong>{{ $item->mengerjakanAsal?->kuis?->judul ?? '-' }}</strong>
+                            </td>
+                            <td>
+                                <strong style="color: #991b1b;">{{ $item->mengerjakanAsal?->nilai ?? '-' }}</strong>
+                            </td>
+                            <td>{{ $kkm !== null ? number_format($kkm, 1) : '-' }}</td>
+                            <td>
+                                <strong>{{ $item->kuisRemedial?->judul ?? '-' }}</strong>
+                            </td>
+                            <td>
+                                {{ $item->tanggal_ditugaskan ? date('d/m/Y', strtotime($item->tanggal_ditugaskan)) : '-' }}
+                            </td>
+                            <td>
+                                @if($item->status === 'ditugaskan')
+                                    <span class="badge badge-warning">Belum Dikerjakan</span>
+                                @elseif($item->status === 'selesai')
+                                    <span class="badge badge-success">✓ Selesai</span>
+                                @else
+                                    <span class="badge">{{ $item->status }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($item->status === 'ditugaskan')
+                                    <a href="{{ route('siswa.remedial.kerjakan', $item->id_remedial_siswa) }}" class="btn btn-small">
+                                        Kerjakan Remedial →
+                                    </a>
+                                @elseif($item->status === 'selesai')
+                                    <span class="muted small" style="color: #166534; font-weight: 600;">✓ Sudah Selesai</span>
+                                @else
+                                    {{ $item->status }}
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     @endif
+</section>
 
-    <br>
-
-    <a href="{{ route('siswa.kuis.index') }}">
-        ← Kembali ke Daftar Kuis
-    </a>
-
-</body>
-</html>
+@endsection

@@ -2,21 +2,43 @@
 
 namespace Tests\Feature;
 
+use App\Models\DraftJawaban;
 use App\Models\Kuis;
 use App\Models\Materi;
-use App\Models\Progress;
-use App\Models\DraftJawaban;
 use App\Models\Mengerjakan;
+use App\Models\Progress;
 use App\Models\Remedial;
 use App\Models\SesiKuis;
 use App\Models\Soal;
 use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Schema::create('user', function (Blueprint $table): void {
+            $table->string('id_user', 50)->primary();
+            $table->string('nomor_induk', 50)->nullable()->unique();
+            $table->string('nama_lengkap', 100);
+            $table->string('role', 20);
+            $table->string('status', 20)->default('aktif');
+            $table->string('kelas', 50)->nullable();
+            $table->string('email', 100)->nullable();
+            $table->string('password');
+            $table->boolean('wajib_ganti_password')->default(false);
+            $table->string('dibuat_oleh', 50)->nullable();
+            $table->timestamps();
+            $table->foreign('dibuat_oleh')->references('id_user')->on('user')->nullOnDelete();
+        });
+    }
 
     public function test_mobile_login_issues_a_sanctum_token(): void
     {
@@ -33,6 +55,65 @@ class ApiTest extends TestCase
             ->assertJsonPath('user.id_user', $user->id_user)
             ->assertJsonPath('user.role', 'siswa')
             ->assertJsonStructure(['token']);
+    }
+
+    public function test_mobile_login_accepts_the_website_nomor_induk_field(): void
+    {
+        $user = $this->createUser('siswa', 'student@example.test');
+        $user->update(['nomor_induk' => '202401']);
+
+        $this->postJson('/api/login', [
+            'nomor_induk' => '202401',
+            'password' => 'password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('user.nomor_induk', '202401')
+            ->assertJsonPath('user.wajib_ganti_password', false)
+            ->assertJsonStructure(['token']);
+    }
+
+    public function test_mobile_login_accepts_the_legacy_login_alias(): void
+    {
+        $user = $this->createUser('siswa', 'student@example.test');
+        $user->update(['nomor_induk' => '202401']);
+
+        $this->postJson('/api/login', [
+            'login' => '202401',
+            'password' => 'password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('user.id_user', $user->id_user);
+    }
+
+    public function test_mobile_login_rejects_admin_accounts(): void
+    {
+        $user = $this->createUser('admin', 'admin@example.test');
+        $user->update(['nomor_induk' => 'ADMIN01']);
+
+        $this->postJson('/api/login', [
+            'nomor_induk' => 'ADMIN01',
+            'password' => 'password',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nomor_induk', 'login', 'email'])
+            ->assertJsonPath('errors.nomor_induk.0', 'Akun Administrator silakan masuk melalui halaman login khusus Admin.');
+    }
+
+    public function test_mobile_login_rejects_inactive_accounts(): void
+    {
+        $user = $this->createUser('siswa', 'inactive@example.test');
+        $user->update([
+            'nomor_induk' => '202402',
+            'status' => 'nonaktif',
+        ]);
+
+        $this->postJson('/api/login', [
+            'nomor_induk' => '202402',
+            'password' => 'password',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nomor_induk', 'login', 'email'])
+            ->assertJsonPath('errors.nomor_induk.0', 'Akun Anda sudah tidak aktif. Hubungi admin sekolah.');
     }
 
     public function test_bearer_token_authenticates_the_current_user(): void
@@ -56,6 +137,22 @@ class ApiTest extends TestCase
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('email');
+    }
+
+    public function test_mobile_login_requires_an_identifier(): void
+    {
+        $this->postJson('/api/login', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nomor_induk', 'login', 'email'])
+            ->assertJsonPath('errors.nomor_induk.0', 'NISN atau NIP wajib diisi.');
+    }
+
+    public function test_mobile_login_requires_a_password(): void
+    {
+        $this->postJson('/api/login', ['nomor_induk' => '202401'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('password')
+            ->assertJsonPath('errors.password.0', 'Password wajib diisi.');
     }
 
     public function test_student_can_mark_materi_complete(): void

@@ -13,17 +13,36 @@ class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
+        $identifier = $request->input('nomor_induk')
+            ?? $request->input('login')
+            ?? $request->input('email');
+
+        if (! is_string($identifier) || $identifier === '') {
+            $this->throwLoginError('NISN atau NIP wajib diisi.');
+        }
+
         $validated = $request->validate([
-            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+        ], [
+            'password.required' => 'Password wajib diisi.',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::where('nomor_induk', $identifier)->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Email atau password salah.'],
-            ]);
+        if (! $user && $request->filled('email')) {
+            $user = User::where('email', $identifier)->first();
+        }
+
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            $this->throwLoginError('NISN, NIP, atau password salah.');
+        }
+
+        if ($user->role === 'admin') {
+            $this->throwLoginError('Akun Administrator silakan masuk melalui halaman login khusus Admin.');
+        }
+
+        if ($user->status !== 'aktif') {
+            $this->throwLoginError('Akun Anda sudah tidak aktif. Hubungi admin sekolah.');
         }
 
         $token = $user->createToken('flutter-mobile');
@@ -56,7 +75,7 @@ class AuthController extends Controller
     }
 
     /**
-     * @return array{id_user: string, nomor_induk: ?string, nama_lengkap: string, role: string, kelas: ?string, email: ?string}
+     * @return array{id_user: string, nomor_induk: ?string, nama_lengkap: string, role: string, kelas: ?string, email: ?string, wajib_ganti_password: bool}
      */
     private function userPayload(User $user): array
     {
@@ -67,6 +86,16 @@ class AuthController extends Controller
             'role' => $user->role,
             'kelas' => $user->kelas,
             'email' => $user->email,
+            'wajib_ganti_password' => $user->wajib_ganti_password,
         ];
+    }
+
+    private function throwLoginError(string $message): never
+    {
+        throw ValidationException::withMessages([
+            'nomor_induk' => [$message],
+            'login' => [$message],
+            'email' => [$message],
+        ]);
     }
 }
